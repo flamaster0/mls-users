@@ -160,6 +160,7 @@ function getAxisBounds(values, config, step = 50) {
     if (forcedMinValue != null) {
       minValue = forcedMinValue;
     }
+    minValue = Math.max(0, minValue);
     if (maxValue <= minValue) {
       minValue -= step;
       maxValue += step;
@@ -167,7 +168,7 @@ function getAxisBounds(values, config, step = 50) {
     return { minValue, maxValue };
   }
 
-  const minValue = config.minValue != null ? config.minValue : Math.floor(dataMin / step) * step;
+  const minValue = Math.max(0, config.minValue != null ? config.minValue : Math.floor(dataMin / step) * step);
   const maxValue = config.maxValue != null ? config.maxValue : Math.ceil(dataMax / step) * step;
   return {
     minValue,
