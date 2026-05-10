@@ -88,7 +88,6 @@ function formatYearLabel(value) {
 }
 
 function buildSemiannualGuideLines(series, xForIndex, height, margin) {
-  const targetMonths = new Set(['01', '07']);
   const startY = margin.top;
   const endY = height - margin.bottom;
   const seen = new Set();
@@ -100,18 +99,19 @@ function buildSemiannualGuideLines(series, xForIndex, height, margin) {
     if (!isFirstOfMonth) return;
     const month = row.date.slice(5, 7);
     const yearMonth = row.date.slice(0, 7);
-    if (!targetMonths.has(month) || seen.has(yearMonth)) return;
+    if (seen.has(yearMonth) || (month !== '01' && month !== '07')) return;
     seen.add(yearMonth);
     const x = xForIndex(index);
+    const isJanuary = month === '01';
     guides.push(`
       <line
         x1="${x}"
         x2="${x}"
         y1="${startY}"
         y2="${endY}"
-        stroke="rgba(148, 163, 184, 0.14)"
-        stroke-width="1"
-        stroke-dasharray="4 6"
+        stroke="${isJanuary ? 'rgba(125, 211, 252, 0.42)' : 'rgba(148, 163, 184, 0.24)'}"
+        stroke-width="${isJanuary ? '2.2' : '1.2'}"
+        stroke-dasharray="${isJanuary ? 'none' : '3 7'}"
       />
     `);
   });
