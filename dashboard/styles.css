@@ -157,6 +157,10 @@ h1 {
   gap: 16px;
 }
 
+.panel-wide {
+  grid-column: 1 / -1;
+}
+
 .panel {
   border-radius: 24px;
   padding: 20px;
