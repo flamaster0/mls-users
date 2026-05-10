@@ -171,6 +171,8 @@ def build_user_trends():
                     "blocked": to_int(row.get("blocked")) or 0,
                     "asari_imports": to_int(row.get("offer_from_Asari")) or 0,
                     "esti_imports": to_int(row.get("offer_from_EstiCRM")) or 0,
+                    "asari_offers": to_int(row.get("offer_from_Asari")) or 0,
+                    "esti_offers": to_int(row.get("offer_from_EstiCRM")) or 0,
                 }
             )
 
