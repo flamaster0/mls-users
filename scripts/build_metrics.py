@@ -115,6 +115,7 @@ def build_user_trends():
                     "city": city,
                     "company": company,
                     "agents": 1,
+                    "searches": to_int(row.get("order_count")) or 0,
                     "offers": to_int(row.get("offer_count")) or 0,
                     "only_mls": to_int(row.get("only_mls")) or 0,
                     "active": to_int(row.get("active")) or 0,
