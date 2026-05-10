@@ -706,6 +706,7 @@ function renderTrendCharts(metrics) {
       svgId: 'trend-searches-chart',
       latestId: 'trend-searches-latest',
       subtitleId: 'trend-searches-subtitle',
+      yTickStep: 1000,
     },
   );
 
