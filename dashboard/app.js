@@ -28,6 +28,7 @@ const chartConfigs = [
   { key: 'offices', label: 'Liczba biur', color: '#7dd3fc', svgId: 'trend-offices-chart', latestId: 'trend-offices-latest', subtitleId: 'trend-office-subtitle', minValue: 400, maxValue: 700, yTickStep: 50 },
   { key: 'agents', label: 'Liczba agentów', color: '#f59e0b', svgId: 'trend-agents-chart', latestId: 'trend-agents-latest', subtitleId: 'trend-agents-subtitle', minValue: 3000, maxValue: 5000, yTickStep: 100 },
   { key: 'searches', label: 'Poszukiwania', color: '#8b8dd9', svgId: 'trend-searches-chart', latestId: 'trend-searches-latest', subtitleId: 'trend-searches-subtitle' },
+  { key: 'suspended', label: 'Oferty suspended', color: '#fb7185', svgId: 'trend-suspended-chart', latestId: 'trend-suspended-latest', subtitleId: 'trend-suspended-subtitle', yTickStep: 100 },
 ];
 
 const breakdownSeriesConfig = [
@@ -338,6 +339,7 @@ function buildTrendSeries(metrics) {
       offers: 0,
       onlyMls: 0,
       active: 0,
+      suspended: 0,
       asariAgencies: new Set(),
       estiAgencies: new Set(),
     };
@@ -347,6 +349,7 @@ function buildTrendSeries(metrics) {
     bucket.offers += Number(row.offers) || 0;
     bucket.onlyMls += Number(row.only_mls) || 0;
     bucket.active += Number(row.active) || 0;
+    bucket.suspended += Number(row.suspended) || 0;
     if ((Number(row.asari_imports) || 0) > 0 && row.company) bucket.asariAgencies.add(row.company);
     if ((Number(row.esti_imports) || 0) > 0 && row.company) bucket.estiAgencies.add(row.company);
     grouped.set(row.date, bucket);
@@ -362,6 +365,7 @@ function buildTrendSeries(metrics) {
       offers: row.offers,
       onlyMls: row.onlyMls,
       active: row.active,
+      suspended: row.suspended,
       onlyMlsActive: row.onlyMls + row.active,
       asariAgencies: row.asariAgencies.size,
       estiAgencies: row.estiAgencies.size,
@@ -729,7 +733,10 @@ function renderTrendCharts(metrics) {
   const importSourcesChart = document.getElementById('trend-import-sources-chart');
   const importSourcesLatest = document.getElementById('trend-import-sources-latest');
   const importSourcesSubtitle = document.getElementById('trend-import-sources-subtitle');
-  if (!breakdownChart || !breakdownLatest || !breakdownSubtitle || !searchesChart || !searchesLatest || !searchesSubtitle || !onlyMlsChart || !onlyMlsLatest || !onlyMlsSubtitle || !importSourcesChart || !importSourcesLatest || !importSourcesSubtitle) return;
+  const suspendedChart = document.getElementById('trend-suspended-chart');
+  const suspendedLatest = document.getElementById('trend-suspended-latest');
+  const suspendedSubtitle = document.getElementById('trend-suspended-subtitle');
+  if (!breakdownChart || !breakdownLatest || !breakdownSubtitle || !searchesChart || !searchesLatest || !searchesSubtitle || !onlyMlsChart || !onlyMlsLatest || !onlyMlsSubtitle || !importSourcesChart || !importSourcesLatest || !importSourcesSubtitle || !suspendedChart || !suspendedLatest || !suspendedSubtitle) return;
 
   if (series.length === 0) {
     breakdownChart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
@@ -744,6 +751,9 @@ function renderTrendCharts(metrics) {
     importSourcesChart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
     importSourcesLatest.innerHTML = '';
     importSourcesSubtitle.textContent = `Agencje z importem Asari / EstiCRM - ${getScopeLabel()} • brak danych`;
+    suspendedChart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
+    suspendedLatest.textContent = '--';
+    suspendedSubtitle.textContent = `Oferty suspended - ${getScopeLabel()} • brak danych`;
     return;
   }
 
