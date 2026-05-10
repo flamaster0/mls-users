@@ -27,7 +27,6 @@ const fallbackMetrics = {
 const chartConfigs = [
   { key: 'offices', label: 'Liczba biur', color: '#7dd3fc', svgId: 'trend-offices-chart', latestId: 'trend-offices-latest', subtitleId: 'trend-office-subtitle' },
   { key: 'agents', label: 'Liczba agentów', color: '#f59e0b', svgId: 'trend-agents-chart', latestId: 'trend-agents-latest', subtitleId: 'trend-agents-subtitle' },
-  { key: 'offers', label: 'Liczba ofert', color: '#a78bfa', svgId: 'trend-offers-chart', latestId: 'trend-offers-latest', subtitleId: 'trend-offers-subtitle' },
 ];
 
 const breakdownSeriesConfig = [
