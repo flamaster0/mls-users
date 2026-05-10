@@ -74,7 +74,6 @@ def build_biura_metrics():
     return {
         "path": path.name,
         "biura": len(rows),
-        "users": total_users,
         "active_offers": active_offers,
         "imported_agencies": imported_agencies,
         "top_agencies": top_agencies,
@@ -83,21 +82,40 @@ def build_biura_metrics():
 
 def build_user_trends():
     trend_rows = []
+    region_set = set()
+    city_by_region = {}
     for path in sorted(ROOT.glob("MLS_Użytkownicy_z_dnia_*.xls")):
         rows = load_sheet_rows(path)
-        trend_rows.append(
-            {
-                "date": parse_user_date(path),
-                "users": len(rows),
-                "offers": sum(to_int(r.get("offer_count")) or 0 for r in rows),
-                "active": sum(to_int(r.get("active")) or 0 for r in rows),
-                "only_mls": sum(to_int(r.get("only_mls")) or 0 for r in rows),
-                "blocked": sum(to_int(r.get("blocked")) or 0 for r in rows),
-                "companies": len({clean_text(r.get("company_name")) for r in rows if clean_text(r.get("company_name"))}),
-            }
-        )
+        date = parse_user_date(path)
+        for row in rows:
+            region = clean_text(row.get("province")).upper() or "UNKNOWN"
+            city = clean_text(row.get("city_name")) or "UNKNOWN"
+            company = clean_text(row.get("company_name"))
+            if region != "UNKNOWN":
+                region_set.add(region)
+                city_by_region.setdefault(region, set()).add(city)
+            trend_rows.append(
+                {
+                    "date": date,
+                    "region": region,
+                    "city": city,
+                    "company": company,
+                    "agents": 1,
+                    "offers": to_int(row.get("offer_count")) or 0,
+                    "only_mls": to_int(row.get("only_mls")) or 0,
+                    "active": to_int(row.get("active")) or 0,
+                    "blocked": to_int(row.get("blocked")) or 0,
+                }
+            )
 
-    return sorted(trend_rows, key=lambda r: r["date"])
+    regions = sorted(region_set)
+    cities = sorted({city for values in city_by_region.values() for city in values if city != "UNKNOWN"})
+    return {
+        "rows": trend_rows,
+        "regions": regions,
+        "cities": cities,
+        "cities_by_region": {region: sorted(values) for region, values in city_by_region.items()},
+    }
 
 
 def main() -> None:
@@ -105,31 +123,51 @@ def main() -> None:
 
     biura = build_biura_metrics()
     trends = build_user_trends()
-    latest_users = trends[-1]["users"] if trends else 0
-    latest_date = trends[-1]["date"] if trends else None
-    latest_offers = trends[-1]["offers"] if trends else 0
+    trend_rows = trends["rows"]
+
+    latest_date = None
+    latest_stats = {"users": 0, "offers": 0, "active": 0, "only_mls": 0}
+    if trend_rows:
+        latest_date = max(row["date"] for row in trend_rows)
+        latest_bucket = [row for row in trend_rows if row["date"] == latest_date]
+        latest_stats = {
+            "users": len(latest_bucket),
+            "offers": sum(row["offers"] for row in latest_bucket),
+            "active": sum(row["active"] for row in latest_bucket),
+            "only_mls": sum(row["only_mls"] for row in latest_bucket),
+        }
 
     metrics = {
         "project": "MLS Users",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "sources": {
             "biura_snapshot": biura["path"],
-            "user_snapshots": [f"MLS_Użytkownicy_z_dnia_{row['date']}.xls" for row in trends],
+            "user_snapshots": sorted(
+                f"MLS_Użytkownicy_z_dnia_{parse_user_date(path)}.xls"
+                for path in ROOT.glob("MLS_Użytkownicy_z_dnia_*.xls")
+            ),
         },
         "status": "live-skeleton",
         "note": "Pierwsze realne metryki z eksportów MLS.",
         "cards": [
             {"label": "Biura", "value": biura["biura"]},
-            {"label": "Użytkownicy", "value": latest_users},
+            {"label": "Użytkownicy", "value": latest_stats["users"]},
             {"label": "Aktywne oferty", "value": biura["active_offers"]},
             {"label": "Biura z importem", "value": biura["imported_agencies"]},
         ],
         "summary": {
             "latest_user_snapshot": latest_date,
-            "latest_user_offers": latest_offers,
+            "latest_user_offers": latest_stats["offers"],
+            "latest_user_active": latest_stats["active"],
+            "latest_user_only_mls": latest_stats["only_mls"],
         },
         "top_agencies": biura["top_agencies"],
-        "trends": trends,
+        "trend_rows": trend_rows,
+        "trend_dimensions": {
+            "regions": trends["regions"],
+            "cities": trends["cities"],
+            "cities_by_region": trends["cities_by_region"],
+        },
     }
 
     out = PROCESSED_DIR / "dashboard.json"

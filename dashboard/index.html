@@ -49,7 +49,31 @@
       </section>
 
       <section class="grid">
-        <section class="panel panel-large">
+        <section class="panel panel-large trend-panel">
+          <div class="panel-head trend-head">
+            <div>
+              <h2 id="trend-title">Trend</h2>
+              <p id="trend-subtitle">Snapshoty tygodniowe</p>
+            </div>
+            <div class="trend-controls">
+              <label>
+                <span>Region</span>
+                <select id="region-filter"></select>
+              </label>
+              <label>
+                <span>Miasto</span>
+                <select id="city-filter"></select>
+              </label>
+            </div>
+          </div>
+          <div class="chart-shell">
+            <svg id="trend-chart" class="trend-chart" viewBox="0 0 1120 420" role="img" aria-label="Wykres trendu"></svg>
+          </div>
+          <div id="trend-legend" class="trend-legend" aria-label="Legenda wykresu"></div>
+          <div id="trend-latest" class="trend-latest"></div>
+        </section>
+
+        <section class="panel">
           <div class="panel-head">
             <h2>Top agencje</h2>
             <p>Ranking po aktywnych ofertach</p>
@@ -70,18 +94,6 @@
                 </tr>
               </tbody>
             </table>
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-head">
-            <h2>Trend</h2>
-            <p>Snapshoty tygodniowe</p>
-          </div>
-          <div id="trend-list" class="trend-list">
-            <div class="trend-placeholder">
-              Dane pojawią się po zbudowaniu metryk.
-            </div>
           </div>
         </section>
       </section>
