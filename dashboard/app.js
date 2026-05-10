@@ -52,6 +52,12 @@ function formatNumber(value) {
   return new Intl.NumberFormat('pl-PL').format(value ?? 0);
 }
 
+function formatDatePl(value) {
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value || '--';
+  return new Intl.DateTimeFormat('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
+}
+
 function renderCards(metrics) {
   const cards = document.querySelectorAll('.card strong');
   metrics.cards.forEach((card, index) => {
@@ -59,6 +65,13 @@ function renderCards(metrics) {
       cards[index].textContent = formatNumber(card.value);
     }
   });
+
+  const cardsDate = document.getElementById('cards-date');
+  if (cardsDate) {
+    cardsDate.textContent = metrics?.summary?.latest_user_snapshot
+      ? formatDatePl(metrics.summary.latest_user_snapshot)
+      : '--';
+  }
 }
 
 function renderTopAgencies(metrics) {
