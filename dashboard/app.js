@@ -260,6 +260,16 @@ function getFilterLabel() {
   return `${regionLabel} / ${cityLabel}`;
 }
 
+function getScopeLabel() {
+  if (state.city !== 'ALL') {
+    return state.city.toLocaleLowerCase('pl-PL');
+  }
+  if (state.region !== 'ALL') {
+    return state.region.toLocaleLowerCase('pl-PL');
+  }
+  return 'wszystkie';
+}
+
 function populateFilters(metrics) {
   const regionSelect = document.getElementById('region-filter');
   const citySelect = document.getElementById('city-filter');
@@ -591,7 +601,7 @@ function renderSingleChart(series, config) {
   `;
 
   setChartTooltip(chart, series, config, [config], width, height, margin);
-  subtitle.textContent = `${series.length} snapshotów • ${getFilterLabel()}`;
+  subtitle.textContent = `${config.label} - ${getScopeLabel()} • ${series.length} snapshotów`;
   latestBox.textContent = formatNumber(series[series.length - 1][config.key]);
 }
 
@@ -672,7 +682,7 @@ function renderMultiSeriesChart(series, config) {
   `;
 
   setChartTooltip(chart, series, { label: config.tooltipLabel ?? config.label ?? 'Wartość' }, config.seriesDefs, width, height, margin);
-  subtitle.textContent = `${series.length} snapshotów • ${getFilterLabel()}`;
+  subtitle.textContent = `${config.label} - ${getScopeLabel()} • ${series.length} snapshotów`;
   latestBox.innerHTML = config.latestRenderer(series[series.length - 1], series);
 }
 
@@ -682,7 +692,7 @@ function renderTrendCharts(metrics) {
   if (!title || !subtitle) return;
 
   const series = buildTrendSeries(metrics);
-  title.textContent = `Trend: ${getFilterLabel()}`;
+  title.textContent = 'Trend';
   subtitle.textContent = series.length
     ? `${series.length} snapshotów • lata ${state.yearFrom === 'ALL' ? 'wszystkie' : state.yearFrom}-${state.yearTo === 'ALL' ? 'wszystkie' : state.yearTo}`
     : 'Snapshoty tygodniowe';
@@ -708,16 +718,16 @@ function renderTrendCharts(metrics) {
   if (series.length === 0) {
     breakdownChart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
     breakdownLatest.innerHTML = '';
-    breakdownSubtitle.textContent = `Tylko w MLS + aktywne / aktywne • ${getFilterLabel()}`;
+    breakdownSubtitle.textContent = `Liczba ofert - ${getScopeLabel()} • brak danych`;
     searchesChart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
     searchesLatest.textContent = '--';
-    searchesSubtitle.textContent = `Snapshoty tygodniowe • ${getFilterLabel()}`;
+    searchesSubtitle.textContent = `Poszukiwania - ${getScopeLabel()} • brak danych`;
     onlyMlsChart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
     onlyMlsLatest.textContent = '--';
-    onlyMlsSubtitle.textContent = `Snapshoty tygodniowe • ${getFilterLabel()}`;
+    onlyMlsSubtitle.textContent = `Tylko w MLS - ${getScopeLabel()} • brak danych`;
     importSourcesChart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
     importSourcesLatest.innerHTML = '';
-    importSourcesSubtitle.textContent = `Snapshoty tygodniowe • ${getFilterLabel()}`;
+    importSourcesSubtitle.textContent = `Agencje z importem Asari / EstiCRM - ${getScopeLabel()} • brak danych`;
     return;
   }
 
@@ -780,7 +790,7 @@ function renderTrendCharts(metrics) {
     ${xLabels.join('')}
   `;
   setChartTooltip(breakdownChart, series, { label: 'Liczba ofert' }, breakdownSeriesConfig, width, height, margin);
-  breakdownSubtitle.textContent = `${series.length} snapshotów • ${getFilterLabel()}`;
+  breakdownSubtitle.textContent = `Liczba ofert - ${getScopeLabel()} • ${series.length} snapshotów`;
   breakdownLatest.innerHTML = `
     <div class="trend-breakdown-latest-grid">
       ${breakdownSeriesConfig
@@ -854,9 +864,9 @@ function renderTrendCharts(metrics) {
     },
   );
 
-  searchesSubtitle.textContent = `${series.length} snapshotów • ${getFilterLabel()}`;
-  onlyMlsSubtitle.textContent = `${series.length} snapshotów • ${getFilterLabel()}`;
-  importSourcesSubtitle.textContent = `${series.length} snapshotów • ${getFilterLabel()}`;
+  searchesSubtitle.textContent = `Poszukiwania - ${getScopeLabel()} • ${series.length} snapshotów`;
+  onlyMlsSubtitle.textContent = `Tylko w MLS - ${getScopeLabel()} • ${series.length} snapshotów`;
+  importSourcesSubtitle.textContent = `Agencje z importem Asari / EstiCRM - ${getScopeLabel()} • ${series.length} snapshotów`;
 }
 
 function attachFilterHandlers(metrics) {
