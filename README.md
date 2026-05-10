@@ -25,3 +25,22 @@ Na tym etapie szkielet jest gotowy do rozbudowy:
 - normalizacja nazw biur i użytkowników
 - metryki tygodniowe
 - dashboard z rankingami i trendami
+
+## Start online za hasłem
+
+Jeśli chcesz wystawić dashboard publicznie, ale z hasłem, użyj wbudowanego serwera Basic Auth:
+
+```bash
+export MLS_DASHBOARD_USER="twoj_login"
+export MLS_DASHBOARD_PASSWORD="twoje_haslo"
+python3 scripts/serve_private.py --port 8080
+```
+
+Po uruchomieniu dashboard będzie dostępny na porcie `8080`, a przeglądarka poprosi o login i hasło.
+
+## Co dalej do prawdziwego hostingu
+
+- ustaw domenę lub subdomenę
+- wystaw ten serwer za reverse proxy lub tunelem HTTPS
+- trzymaj login i hasło poza repo, jako zmienne środowiskowe
+- jeśli chcesz, mogę też przygotować wariant pod Docker albo pod konkretny hosting z panelem logowania

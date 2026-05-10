@@ -7,6 +7,7 @@
     "dev": "python3 -m http.server 4173 -d .",
     "build:data": "python3 scripts/build_metrics.py",
     "import": "python3 scripts/import_xls.py",
-    "preview": "python3 -m http.server 4173 -d ."
+    "preview": "python3 -m http.server 4173 -d .",
+    "serve:private": "python3 scripts/serve_private.py"
   }
 }
