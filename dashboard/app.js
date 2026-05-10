@@ -37,6 +37,8 @@ const breakdownSeriesConfig = [
 const state = {
   region: 'ALL',
   city: 'ALL',
+  sortKey: 'active_offers',
+  sortDirection: 'desc',
 };
 
 function escapeHtml(value) {
@@ -58,6 +60,26 @@ function formatDatePl(value) {
   return new Intl.DateTimeFormat('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
 }
 
+function compareValues(a, b, key) {
+  if (key === 'name') {
+    return a.name.localeCompare(b.name, 'pl', { sensitivity: 'base' });
+  }
+
+  return (Number(a[key]) || 0) - (Number(b[key]) || 0);
+}
+
+function getSortedTopAgencies(metrics) {
+  const rows = Array.isArray(metrics?.top_agencies) ? [...metrics.top_agencies] : [];
+  const { sortKey, sortDirection } = state;
+  const direction = sortDirection === 'asc' ? 1 : -1;
+
+  return rows.sort((a, b) => {
+    const primary = compareValues(a, b, sortKey);
+    if (primary !== 0) return primary * direction;
+    return a.name.localeCompare(b.name, 'pl', { sensitivity: 'base' });
+  });
+}
+
 function renderCards(metrics) {
   const cards = document.querySelectorAll('.card strong');
   metrics.cards.forEach((card, index) => {
@@ -76,11 +98,30 @@ function renderCards(metrics) {
 
 function renderTopAgencies(metrics) {
   const tbody = document.getElementById('top-agencies');
+  const headerButtons = document.querySelectorAll('[data-sort-key]');
+  const sortLabels = {
+    name: 'Agencja',
+    active_offers: 'Oferty',
+    users: 'Użytkownicy',
+    branches: 'Oddziały',
+  };
+
+  headerButtons.forEach((button) => {
+    const key = button.getAttribute('data-sort-key');
+    const isActive = key === state.sortKey;
+    const direction = isActive ? (state.sortDirection === 'asc' ? '▲' : '▼') : '↕';
+    button.setAttribute('aria-sort', isActive ? (state.sortDirection === 'asc' ? 'ascending' : 'descending') : 'none');
+    button.innerHTML = `
+      <span>${escapeHtml(sortLabels[key] ?? key)}</span>
+      <span class="sort-indicator">${direction}</span>
+    `;
+  });
+
   if (!tbody || !Array.isArray(metrics?.top_agencies) || metrics.top_agencies.length === 0) {
     return;
   }
 
-  tbody.innerHTML = metrics.top_agencies
+  tbody.innerHTML = getSortedTopAgencies(metrics)
     .map(
       (row) => `
         <tr>
@@ -92,6 +133,24 @@ function renderTopAgencies(metrics) {
       `,
     )
     .join('');
+}
+
+function attachTableSortHandlers(metrics) {
+  document.querySelectorAll('[data-sort-key]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const nextKey = button.getAttribute('data-sort-key');
+      if (!nextKey) return;
+
+      if (state.sortKey === nextKey) {
+        state.sortDirection = state.sortDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        state.sortKey = nextKey;
+        state.sortDirection = nextKey === 'name' ? 'asc' : 'desc';
+      }
+
+      renderTopAgencies(metrics);
+    });
+  });
 }
 
 function getFilteredCities(metrics) {
@@ -445,6 +504,7 @@ function attachFilterHandlers(metrics) {
 const metrics = (await loadMetrics()) ?? fallbackMetrics;
 renderCards(metrics);
 renderTopAgencies(metrics);
+attachTableSortHandlers(metrics);
 populateFilters(metrics);
 attachFilterHandlers(metrics);
 renderTrendCharts(metrics);

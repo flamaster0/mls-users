@@ -294,6 +294,32 @@ th {
   color: var(--muted);
 }
 
+.sort-button {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.sort-button:hover {
+  color: var(--text);
+}
+
+.sort-indicator {
+  color: var(--accent);
+  font-size: 0.72rem;
+  letter-spacing: 0;
+}
+
 tbody tr:hover {
   background: rgba(125, 211, 252, 0.05);
 }
