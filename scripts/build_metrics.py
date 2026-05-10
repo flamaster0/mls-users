@@ -1,36 +1,135 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
-from datetime import datetime
+import re
+
+import xlrd
 
 
 ROOT = Path(__file__).resolve().parents[1]
 PROCESSED_DIR = ROOT / "data" / "processed"
 
 
+def clean_text(value) -> str:
+    return str(value).strip() if value is not None else ""
+
+
+def to_float(value):
+    try:
+        if value is None or value == "":
+            return None
+        return float(value)
+    except Exception:
+        return None
+
+
+def to_int(value):
+    num = to_float(value)
+    if num is None:
+        return None
+    return int(round(num))
+
+
+def load_sheet_rows(path: Path):
+    book = xlrd.open_workbook(path.as_posix(), ignore_workbook_corruption=True)
+    sh = book.sheet_by_index(0)
+    header = [clean_text(x) for x in sh.row_values(0)]
+    return [dict(zip(header, sh.row_values(r))) for r in range(1, sh.nrows)]
+
+
+def parse_user_date(path: Path) -> str:
+    match = re.search(r"(\d{4}-\d{2}-\d{2})", path.name)
+    return match.group(1) if match else path.stem
+
+
+def build_biura_metrics():
+    path = ROOT / "MLS_Biura_z_dnia_2026-05-10.xls"
+    rows = load_sheet_rows(path)
+
+    def field(name):
+        return [r.get(name) for r in rows]
+
+    active_offers = sum(to_int(v) or 0 for v in field("Oferty: aktywne (3)"))
+    imported_agencies = sum(1 for v in field("Czy import ofert") if clean_text(v).lower() == "tak")
+
+    top = sorted(
+        rows,
+        key=lambda r: (to_int(r.get("Oferty: aktywne (3)")) or 0, to_int(r.get("Liczba użytkowników")) or 0),
+        reverse=True,
+    )[:10]
+    top_agencies = [
+        {
+            "name": clean_text(r.get("Nazwa biura")),
+            "active_offers": to_int(r.get("Oferty: aktywne (3)")) or 0,
+            "users": to_int(r.get("Liczba użytkowników")) or 0,
+            "branches": to_int(r.get("Liczba oddziałów")) or 0,
+            "province": clean_text(r.get("Województwo siedziby")),
+            "imports": clean_text(r.get("Czy import ofert")),
+        }
+        for r in top
+    ]
+
+    return {
+        "path": path.name,
+        "biura": len(rows),
+        "users": total_users,
+        "active_offers": active_offers,
+        "imported_agencies": imported_agencies,
+        "top_agencies": top_agencies,
+    }
+
+
+def build_user_trends():
+    trend_rows = []
+    for path in sorted(ROOT.glob("MLS_Użytkownicy_z_dnia_*.xls")):
+        rows = load_sheet_rows(path)
+        trend_rows.append(
+            {
+                "date": parse_user_date(path),
+                "users": len(rows),
+                "offers": sum(to_int(r.get("offer_count")) or 0 for r in rows),
+                "active": sum(to_int(r.get("active")) or 0 for r in rows),
+                "only_mls": sum(to_int(r.get("only_mls")) or 0 for r in rows),
+                "blocked": sum(to_int(r.get("blocked")) or 0 for r in rows),
+                "companies": len({clean_text(r.get("company_name")) for r in rows if clean_text(r.get("company_name"))}),
+            }
+        )
+
+    return sorted(trend_rows, key=lambda r: r["date"])
+
+
 def main() -> None:
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
+    biura = build_biura_metrics()
+    trends = build_user_trends()
+    latest_users = trends[-1]["users"] if trends else 0
+    latest_date = trends[-1]["date"] if trends else None
+    latest_offers = trends[-1]["offers"] if trends else 0
+
     metrics = {
         "project": "MLS Users",
-        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "sources": {
-            "biura_snapshot": "MLS_Biura_z_dnia_2026-05-10.xls",
-            "user_snapshots": sorted(
-                p.name for p in ROOT.glob("MLS_Użytkownicy_z_dnia_*.xls")
-            ),
+            "biura_snapshot": biura["path"],
+            "user_snapshots": [f"MLS_Użytkownicy_z_dnia_{row['date']}.xls" for row in trends],
         },
-        "status": "skeleton",
-        "note": "This file will be replaced by real aggregations from the XLS exports.",
+        "status": "live-skeleton",
+        "note": "Pierwsze realne metryki z eksportów MLS.",
         "cards": [
-            {"label": "Biura", "value": None},
-            {"label": "Użytkownicy", "value": None},
-            {"label": "Aktywne oferty", "value": None},
-            {"label": "Importy", "value": None},
+            {"label": "Biura", "value": biura["biura"]},
+            {"label": "Użytkownicy", "value": latest_users},
+            {"label": "Aktywne oferty", "value": biura["active_offers"]},
+            {"label": "Biura z importem", "value": biura["imported_agencies"]},
         ],
-        "top_agencies": [],
-        "trends": [],
+        "summary": {
+            "latest_user_snapshot": latest_date,
+            "latest_user_offers": latest_offers,
+        },
+        "top_agencies": biura["top_agencies"],
+        "trends": trends,
     }
 
     out = PROCESSED_DIR / "dashboard.json"

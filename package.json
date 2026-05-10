@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "python3 -m http.server 4173 -d dashboard",
+    "dev": "python3 -m http.server 4173 -d .",
     "build:data": "python3 scripts/build_metrics.py",
     "import": "python3 scripts/import_xls.py",
-    "preview": "python3 -m http.server 4173 -d dashboard"
+    "preview": "python3 -m http.server 4173 -d ."
   }
 }
