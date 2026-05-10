@@ -86,8 +86,9 @@ function getAxisBounds(values, config, step = 50) {
   const autoScale = shouldAutoScaleTrend();
 
   if (autoScale) {
-    let minValue = Math.floor((dataMin - step) / step) * step;
-    let maxValue = Math.ceil((dataMax + step) / step) * step;
+    const padding = Math.max(step / 2, 10);
+    let minValue = Math.floor((dataMin - padding) / step) * step;
+    let maxValue = Math.ceil((dataMax + padding) / step) * step;
     if (maxValue <= minValue) {
       minValue -= step;
       maxValue += step;
