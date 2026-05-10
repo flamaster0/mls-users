@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MLS Users</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+    <main class="shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Private analytics workspace</p>
+          <h1>MLS Users</h1>
+          <p class="lead">
+            Panel do monitorowania biur, użytkowników i trendów z eksportów MLS.
+          </p>
+        </div>
+        <div class="hero-card">
+          <span>Pipeline</span>
+          <strong>raw → processed → dashboard</strong>
+          <p>Na razie szkielet, gotowy do podłączenia parsera XLS i metryk.</p>
+        </div>
+      </header>
+
+      <section class="cards" id="cards">
+        <article class="card">
+          <span>Biura</span>
+          <strong>--</strong>
+          <p>Łączna liczba biur z ostatniego snapshotu</p>
+        </article>
+        <article class="card">
+          <span>Użytkownicy</span>
+          <strong>--</strong>
+          <p>Aktywność w sieci MLS</p>
+        </article>
+        <article class="card">
+          <span>Aktywne oferty</span>
+          <strong>--</strong>
+          <p>Oferty do dalszej analizy</p>
+        </article>
+        <article class="card">
+          <span>Importy</span>
+          <strong>--</strong>
+          <p>Biura z importem danych</p>
+        </article>
+      </section>
+
+      <section class="grid">
+        <section class="panel panel-large">
+          <div class="panel-head">
+            <h2>Top agencje</h2>
+            <p>Ranking po aktywnych ofertach</p>
+          </div>
+          <div class="table-shell">
+            <table>
+              <thead>
+                <tr>
+                  <th>Agencja</th>
+                  <th>Oferty</th>
+                  <th>Użytkownicy</th>
+                  <th>Oddziały</th>
+                </tr>
+              </thead>
+              <tbody id="top-agencies">
+                <tr>
+                  <td colspan="4" class="muted">Dane pojawią się po zbudowaniu metryk.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Trend</h2>
+            <p>Snapshoty tygodniowe</p>
+          </div>
+          <div class="empty-chart">
+            <div class="empty-bar"></div>
+            <div class="empty-bar short"></div>
+            <div class="empty-bar medium"></div>
+            <div class="empty-bar tall"></div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

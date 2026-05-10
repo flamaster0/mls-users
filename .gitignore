@@ -4,3 +4,8 @@ dist/
 build/
 tmp/
 *.log
+data/processed/*.json
+data/processed/*.csv
+!data/processed/.gitkeep
+!data/raw/.gitkeep
+!reports/.gitkeep
