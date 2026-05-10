@@ -31,7 +31,6 @@ const chartConfigs = [
 
 const breakdownSeriesConfig = [
   { key: 'onlyMlsActive', label: 'Tylko w MLS + aktywne', color: '#facc15' },
-  { key: 'onlyMls', label: 'Tylko w MLS', color: '#34d399' },
   { key: 'active', label: 'Aktywne', color: '#fb7185' },
 ];
 
@@ -230,12 +229,18 @@ function renderTrendCharts(metrics) {
   const breakdownChart = document.getElementById('trend-offers-breakdown-chart');
   const breakdownLatest = document.getElementById('trend-offers-breakdown-latest');
   const breakdownSubtitle = document.getElementById('trend-offers-breakdown-subtitle');
-  if (!breakdownChart || !breakdownLatest || !breakdownSubtitle) return;
+  const onlyMlsChart = document.getElementById('trend-only-mls-chart');
+  const onlyMlsLatest = document.getElementById('trend-only-mls-latest');
+  const onlyMlsSubtitle = document.getElementById('trend-only-mls-subtitle');
+  if (!breakdownChart || !breakdownLatest || !breakdownSubtitle || !onlyMlsChart || !onlyMlsLatest || !onlyMlsSubtitle) return;
 
   if (series.length === 0) {
     breakdownChart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
     breakdownLatest.innerHTML = '';
-    breakdownSubtitle.textContent = 'Tylko w MLS + aktywne / tylko w MLS / aktywne';
+    breakdownSubtitle.textContent = 'Tylko w MLS + aktywne / aktywne';
+    onlyMlsChart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
+    onlyMlsLatest.textContent = '--';
+    onlyMlsSubtitle.textContent = 'Snapshoty tygodniowe';
     return;
   }
 
@@ -301,6 +306,18 @@ function renderTrendCharts(metrics) {
         .join('')}
     </div>
   `;
+
+  renderSingleChart(
+    series,
+    {
+      key: 'onlyMls',
+      label: 'Tylko w MLS',
+      color: '#34d399',
+      svgId: 'trend-only-mls-chart',
+      latestId: 'trend-only-mls-latest',
+      subtitleId: 'trend-only-mls-subtitle',
+    },
+  );
 }
 
 function attachFilterHandlers(metrics) {
