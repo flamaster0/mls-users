@@ -154,6 +154,95 @@ function pathFromPoints(points) {
   return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(' ');
 }
 
+function ensureChartTooltip(chart) {
+  const shell = chart.parentElement;
+  if (!shell) return null;
+
+  let tooltip = shell.querySelector('.chart-tooltip');
+  if (!tooltip) {
+    tooltip = document.createElement('div');
+    tooltip.className = 'chart-tooltip';
+    shell.appendChild(tooltip);
+  }
+
+  return tooltip;
+}
+
+function setChartTooltip(chart, series, config, seriesDefs, width, height, margin) {
+  const tooltip = ensureChartTooltip(chart);
+  if (!tooltip || !series.length) return;
+
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
+  const xForIndex = (index) => margin.left + (series.length === 1 ? innerWidth / 2 : (index / (series.length - 1)) * innerWidth);
+  const maxValues = seriesDefs.map((seriesDef) => Math.max(1, ...series.map((row) => Number(row[seriesDef.key]) || 0)));
+
+  const pointsBySeries = seriesDefs.map((seriesDef, seriesIndex) =>
+    series.map((row, index) => {
+      const yForValue = (value) => margin.top + innerHeight - ((value - 0) / (maxValues[seriesIndex] - 0)) * innerHeight;
+      return {
+        x: xForIndex(index),
+        y: yForValue(row[seriesDef.key] ?? 0),
+        value: row[seriesDef.key] ?? 0,
+      };
+    }),
+  );
+
+  const updateTooltip = (event) => {
+    const rect = chart.getBoundingClientRect();
+    const scaleX = rect.width / width;
+    const scaleY = rect.height / height;
+    const x = event.clientX - rect.left;
+    const svgX = x / scaleX;
+    const rawIndex = series.length === 1
+      ? 0
+      : Math.round(((svgX - margin.left) / innerWidth) * (series.length - 1));
+    const index = Math.max(0, Math.min(series.length - 1, rawIndex));
+    const row = series[index];
+    const tooltipRows = seriesDefs
+      .map((seriesDef, seriesIndex) => {
+        const point = pointsBySeries[seriesIndex][index];
+        return `
+          <div class="chart-tooltip-row">
+            <span class="chart-tooltip-swatch" style="background:${seriesDef.color}"></span>
+            <span class="chart-tooltip-label">${escapeHtml(seriesDef.label)}:</span>
+            <strong>${formatNumber(point.value)}</strong>
+          </div>
+        `;
+      })
+      .join('');
+
+    tooltip.innerHTML = `
+      <div class="chart-tooltip-date">${escapeHtml(row.date)}</div>
+      ${tooltipRows}
+    `;
+
+    const point = pointsBySeries[0][index];
+    const tooltipWidth = 220;
+    const tooltipHeight = 42 + seriesDefs.length * 28;
+    let left = point.x * scaleX + 16;
+    let top = point.y * scaleY - 16;
+    const maxLeft = rect.width - tooltipWidth - 8;
+    const maxTop = rect.height - tooltipHeight - 8;
+
+    if (left > maxLeft) left = point.x * scaleX - tooltipWidth - 16;
+    if (left < 8) left = 8;
+    if (top > maxTop) top = maxTop;
+    if (top < 8) top = 8;
+
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+    tooltip.style.opacity = '1';
+  };
+
+  chart.style.cursor = 'crosshair';
+  chart.onpointermove = updateTooltip;
+  chart.onpointerenter = updateTooltip;
+  chart.onpointerleave = () => {
+    tooltip.style.opacity = '0';
+  };
+}
+
 function renderSingleChart(series, config) {
   const chart = document.getElementById(config.svgId);
   const latestBox = document.getElementById(config.latestId);
@@ -209,6 +298,7 @@ function renderSingleChart(series, config) {
     ${xLabels.join('')}
   `;
 
+  setChartTooltip(chart, series, config, [config], width, height, margin);
   subtitle.textContent = `${series.length} snapshotów`;
   latestBox.textContent = formatNumber(series[series.length - 1][config.key]);
 }
@@ -291,6 +381,7 @@ function renderTrendCharts(metrics) {
     ${seriesMarkup}
     ${xLabels.join('')}
   `;
+  setChartTooltip(breakdownChart, series, { label: 'Liczba ofert' }, breakdownSeriesConfig, width, height, margin);
   breakdownSubtitle.textContent = `${series.length} snapshotów`;
   breakdownLatest.innerHTML = `
     <div class="trend-breakdown-latest-grid">
