@@ -426,30 +426,53 @@ function buildTrendSeries(metrics) {
     }));
 }
 
-function pathFromPoints(points) {
-  if (!points.length) return '';
-  if (points.length < 2) {
-    return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(' ');
+function pathFromPoints(points, options = {}) {
+  const { allowGaps = false } = options;
+  const filteredPoints = allowGaps ? points.filter(Boolean) : points;
+  if (!allowGaps) {
+    if (!filteredPoints.length) return '';
+    if (filteredPoints.length < 2) {
+      return filteredPoints.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(' ');
+    }
+
+    const tension = 0.18;
+    const path = [`M ${filteredPoints[0].x.toFixed(2)} ${filteredPoints[0].y.toFixed(2)}`];
+
+    for (let index = 0; index < filteredPoints.length - 1; index += 1) {
+      const current = filteredPoints[index];
+      const next = filteredPoints[index + 1];
+      const prev = filteredPoints[index - 1] ?? current;
+      const nextNext = filteredPoints[index + 2] ?? next;
+
+      const cp1x = current.x + (next.x - prev.x) * tension;
+      const cp1y = current.y + (next.y - prev.y) * tension;
+      const cp2x = next.x - (nextNext.x - current.x) * tension;
+      const cp2y = next.y - (nextNext.y - current.y) * tension;
+
+      path.push(`C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)} ${cp2x.toFixed(2)} ${cp2y.toFixed(2)} ${next.x.toFixed(2)} ${next.y.toFixed(2)}`);
+    }
+
+    return path.join(' ');
   }
 
-  const tension = 0.18;
-  const path = [`M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`];
-
-  for (let index = 0; index < points.length - 1; index += 1) {
-    const current = points[index];
-    const next = points[index + 1];
-    const prev = points[index - 1] ?? current;
-    const nextNext = points[index + 2] ?? next;
-
-    const cp1x = current.x + (next.x - prev.x) * tension;
-    const cp1y = current.y + (next.y - prev.y) * tension;
-    const cp2x = next.x - (nextNext.x - current.x) * tension;
-    const cp2y = next.y - (nextNext.y - current.y) * tension;
-
-    path.push(`C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)} ${cp2x.toFixed(2)} ${cp2y.toFixed(2)} ${next.x.toFixed(2)} ${next.y.toFixed(2)}`);
+  const segments = [];
+  let currentSegment = [];
+  for (const point of points) {
+    if (!point) {
+      if (currentSegment.length) {
+        segments.push(currentSegment);
+        currentSegment = [];
+      }
+      continue;
+    }
+    currentSegment.push(point);
   }
+  if (currentSegment.length) segments.push(currentSegment);
 
-  return path.join(' ');
+  return segments
+    .map((segment) => pathFromPoints(segment, { allowGaps: false }))
+    .filter(Boolean)
+    .join(' ');
 }
 
 function ensureChartTooltip(chart) {
@@ -804,11 +827,17 @@ function renderMultiSeriesChart(series, config) {
 
   const linesMarkup = config.seriesDefs
     .map((seriesDef) => {
-      const points = series.map((row, index) => ({ x: xForIndex(index), y: yForValue(row[seriesDef.key] ?? 0) }));
-      const last = points[points.length - 1];
+      const points = series.map((row, index) => {
+        const value = Number(row[seriesDef.key]) || 0;
+        if (config.zeroAsGap && value === 0) return null;
+        return { x: xForIndex(index), y: yForValue(value), value };
+      });
+      const last = [...points].reverse().find((point) => point);
+      const path = pathFromPoints(points, { allowGaps: Boolean(config.zeroAsGap) });
+      if (!path) return '';
       return `
-        <path d="${pathFromPoints(points)}" fill="none" stroke="${seriesDef.color}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
-        <circle cx="${last.x}" cy="${last.y}" r="4.5" fill="${seriesDef.color}" stroke="rgba(7, 17, 31, 0.9)" stroke-width="2" />
+        <path d="${path}" fill="none" stroke="${seriesDef.color}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
+        ${last ? `<circle cx="${last.x}" cy="${last.y}" r="4.5" fill="${seriesDef.color}" stroke="rgba(7, 17, 31, 0.9)" stroke-width="2" />` : ''}
       `;
     })
     .join('');
@@ -1007,6 +1036,7 @@ function renderTrendCharts(metrics) {
       yTickStep: 50,
       gridStep: 50,
       hideWhenAllZero: true,
+      zeroAsGap: true,
       latestRenderer: (latest) => `
         <div class="trend-breakdown-latest-grid">
           <div class="trend-latest-card">
