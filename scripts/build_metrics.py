@@ -4,6 +4,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 import re
+import unicodedata
 
 import xlrd
 
@@ -14,6 +15,17 @@ PROCESSED_DIR = ROOT / "data" / "processed"
 
 def clean_text(value) -> str:
     return str(value).strip() if value is not None else ""
+
+
+def normalize_city_name(value) -> str:
+    text = clean_text(value)
+    if not text:
+        return ""
+
+    normalized = unicodedata.normalize("NFKD", text)
+    without_marks = "".join(ch for ch in normalized if not unicodedata.combining(ch))
+    compact = re.sub(r"\s+", " ", without_marks).strip()
+    return compact.title()
 
 
 def to_float(value):
@@ -103,7 +115,7 @@ def build_user_trends():
         date = parse_user_date(path)
         for row in rows:
             region = clean_text(row.get("province")).upper() or "UNKNOWN"
-            city = clean_text(row.get("city_name")) or "UNKNOWN"
+            city = normalize_city_name(row.get("city_name")) or "UNKNOWN"
             company = clean_text(row.get("company_name"))
             if region != "UNKNOWN":
                 region_set.add(region)
