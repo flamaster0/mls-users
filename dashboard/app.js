@@ -30,8 +30,8 @@ const chartConfigs = [
 ];
 
 const breakdownSeriesConfig = [
-  { key: 'onlyMlsActive', label: 'Tylko w MLS + aktywne', color: '#facc15' },
-  { key: 'active', label: 'Aktywne', color: '#fb7185' },
+  { key: 'onlyMlsActive', label: 'Tylko w MLS + aktywne', color: '#356B31' },
+  { key: 'active', label: 'Aktywne', color: '#5D9F4F' },
 ];
 
 const state = {
@@ -59,6 +59,18 @@ function formatDatePl(value) {
   const date = new Date(`${value}T00:00:00`);
   if (Number.isNaN(date.getTime())) return value || '--';
   return new Intl.DateTimeFormat('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
+}
+
+function formatMonthLabel(value) {
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value || '--';
+  return new Intl.DateTimeFormat('pl-PL', { month: '2-digit' }).format(date);
+}
+
+function formatYearLabel(value) {
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('pl-PL', { year: 'numeric' }).format(date);
 }
 
 function compareValues(a, b, key) {
@@ -368,7 +380,7 @@ function renderSingleChart(series, config) {
 
   const width = 1120;
   const height = 280;
-  const margin = { top: 18, right: 22, bottom: 38, left: 54 };
+  const margin = { top: 18, right: 22, bottom: 48, left: 54 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
@@ -391,9 +403,19 @@ function renderSingleChart(series, config) {
   });
 
   const xLabels = series.map((row, index) => {
-    if (index !== 0 && index !== series.length - 1 && index % 3 !== 0) return '';
+    const prev = series[index - 1];
+    const isFirstOfMonth = !prev || row.date.slice(0, 7) !== prev.date.slice(0, 7);
+    if (!isFirstOfMonth) return '';
     const x = xForIndex(index);
-    return `<text x="${x}" y="${height - 10}" text-anchor="middle" fill="#9fb0c7" font-size="12">${escapeHtml(row.date)}</text>`;
+    const isFirstOfYear = row.date.slice(5, 7) === '01';
+    const monthLabel = escapeHtml(formatMonthLabel(row.date));
+    const yearLabel = isFirstOfYear ? escapeHtml(formatYearLabel(row.date)) : '';
+    return `
+      <text x="${x}" y="${height - 16}" text-anchor="middle" fill="#9fb0c7" font-size="12">
+        <tspan x="${x}" dy="0">${monthLabel}</tspan>
+        ${isFirstOfYear ? `<tspan x="${x}" dy="14" font-size="10" fill="#7f93ab">${yearLabel}</tspan>` : ''}
+      </text>
+    `;
   });
 
   const points = series.map((row, index) => ({ x: xForIndex(index), y: yForValue(row[config.key] ?? 0) }));
@@ -446,7 +468,7 @@ function renderTrendCharts(metrics) {
 
   const width = 1120;
   const height = 280;
-  const margin = { top: 18, right: 22, bottom: 38, left: 54 };
+  const margin = { top: 18, right: 22, bottom: 48, left: 54 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
@@ -470,9 +492,19 @@ function renderTrendCharts(metrics) {
   });
 
   const xLabels = series.map((row, index) => {
-    if (index !== 0 && index !== series.length - 1 && index % 3 !== 0) return '';
+    const prev = series[index - 1];
+    const isFirstOfMonth = !prev || row.date.slice(0, 7) !== prev.date.slice(0, 7);
+    if (!isFirstOfMonth) return '';
     const x = xForIndex(index);
-    return `<text x="${x}" y="${height - 10}" text-anchor="middle" fill="#9fb0c7" font-size="12">${escapeHtml(row.date)}</text>`;
+    const isFirstOfYear = row.date.slice(5, 7) === '01';
+    const monthLabel = escapeHtml(formatMonthLabel(row.date));
+    const yearLabel = isFirstOfYear ? escapeHtml(formatYearLabel(row.date)) : '';
+    return `
+      <text x="${x}" y="${height - 16}" text-anchor="middle" fill="#9fb0c7" font-size="12">
+        <tspan x="${x}" dy="0">${monthLabel}</tspan>
+        ${isFirstOfYear ? `<tspan x="${x}" dy="14" font-size="10" fill="#7f93ab">${yearLabel}</tspan>` : ''}
+      </text>
+    `;
   });
 
   const seriesMarkup = breakdownSeriesConfig
@@ -513,7 +545,7 @@ function renderTrendCharts(metrics) {
     {
       key: 'onlyMls',
       label: 'Tylko w MLS',
-      color: '#34d399',
+      color: '#60BCB2',
       svgId: 'trend-only-mls-chart',
       latestId: 'trend-only-mls-latest',
       subtitleId: 'trend-only-mls-subtitle',
