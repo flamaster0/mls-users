@@ -317,6 +317,8 @@ function buildTrendSeries(metrics) {
       offers: 0,
       onlyMls: 0,
       active: 0,
+      asariAgencies: new Set(),
+      estiAgencies: new Set(),
     };
     if (row.company) bucket.officesSet.add(row.company);
     bucket.agents += Number(row.agents) || 0;
@@ -324,6 +326,8 @@ function buildTrendSeries(metrics) {
     bucket.offers += Number(row.offers) || 0;
     bucket.onlyMls += Number(row.only_mls) || 0;
     bucket.active += Number(row.active) || 0;
+    if ((Number(row.asari_imports) || 0) > 0 && row.company) bucket.asariAgencies.add(row.company);
+    if ((Number(row.esti_imports) || 0) > 0 && row.company) bucket.estiAgencies.add(row.company);
     grouped.set(row.date, bucket);
   }
 
@@ -338,6 +342,8 @@ function buildTrendSeries(metrics) {
       onlyMls: row.onlyMls,
       active: row.active,
       onlyMlsActive: row.onlyMls + row.active,
+      asariAgencies: row.asariAgencies.size,
+      estiAgencies: row.estiAgencies.size,
     }));
 }
 
@@ -821,27 +827,27 @@ function renderTrendCharts(metrics) {
   renderMultiSeriesChart(
     series,
     {
-      label: 'Importy Asari / EstiCRM',
+      label: 'Agencje z importem Asari / EstiCRM',
       svgId: 'trend-import-sources-chart',
       latestId: 'trend-import-sources-latest',
       subtitleId: 'trend-import-sources-subtitle',
       seriesDefs: [
-        { key: 'asari_imports', label: 'Asari', color: '#60BCB2' },
-        { key: 'esti_imports', label: 'EstiCRM', color: '#5D9F4F' },
+        { key: 'asariAgencies', label: 'Asari', color: '#60BCB2' },
+        { key: 'estiAgencies', label: 'EstiCRM', color: '#5D9F4F' },
       ],
-      tooltipLabel: 'Importy',
+      tooltipLabel: 'Agencje',
       minValue: 0,
-      yTickStep: 500,
-      gridStep: 500,
+      yTickStep: 25,
+      gridStep: 25,
       latestRenderer: (latest) => `
         <div class="trend-breakdown-latest-grid">
           <div class="trend-latest-card">
             <span>Asari</span>
-            <strong>${formatNumber(latest.asari_imports)}</strong>
+            <strong>${formatNumber(latest.asariAgencies)}</strong>
           </div>
           <div class="trend-latest-card">
             <span>EstiCRM</span>
-            <strong>${formatNumber(latest.esti_imports)}</strong>
+            <strong>${formatNumber(latest.estiAgencies)}</strong>
           </div>
         </div>
       `,
