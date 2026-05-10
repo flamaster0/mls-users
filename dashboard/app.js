@@ -254,6 +254,12 @@ function getFilteredCities(metrics) {
   return metrics.trend_dimensions?.cities_by_region?.[state.region] ?? [];
 }
 
+function getFilterLabel() {
+  const regionLabel = state.region === 'ALL' ? 'wszystkie regiony' : state.region;
+  const cityLabel = state.city === 'ALL' ? 'wszystkie miasta' : state.city;
+  return `${regionLabel} / ${cityLabel}`;
+}
+
 function populateFilters(metrics) {
   const regionSelect = document.getElementById('region-filter');
   const citySelect = document.getElementById('city-filter');
@@ -579,7 +585,7 @@ function renderSingleChart(series, config) {
   `;
 
   setChartTooltip(chart, series, config, [config], width, height, margin);
-  subtitle.textContent = `${series.length} snapshotów`;
+  subtitle.textContent = `${series.length} snapshotów • ${getFilterLabel()}`;
   latestBox.textContent = formatNumber(series[series.length - 1][config.key]);
 }
 
@@ -660,7 +666,7 @@ function renderMultiSeriesChart(series, config) {
   `;
 
   setChartTooltip(chart, series, { label: config.tooltipLabel ?? config.label ?? 'Wartość' }, config.seriesDefs, width, height, margin);
-  subtitle.textContent = `${series.length} snapshotów`;
+  subtitle.textContent = `${series.length} snapshotów • ${getFilterLabel()}`;
   latestBox.innerHTML = config.latestRenderer(series[series.length - 1], series);
 }
 
@@ -670,7 +676,7 @@ function renderTrendCharts(metrics) {
   if (!title || !subtitle) return;
 
   const series = buildTrendSeries(metrics);
-  title.textContent = `Trend: ${state.region === 'ALL' ? 'Wszystkie regiony' : state.region}${state.city === 'ALL' ? '' : ` / ${state.city}`}`;
+  title.textContent = `Trend: ${getFilterLabel()}`;
   subtitle.textContent = series.length
     ? `${series.length} snapshotów • lata ${state.yearFrom === 'ALL' ? 'wszystkie' : state.yearFrom}-${state.yearTo === 'ALL' ? 'wszystkie' : state.yearTo}`
     : 'Snapshoty tygodniowe';
@@ -696,16 +702,16 @@ function renderTrendCharts(metrics) {
   if (series.length === 0) {
     breakdownChart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
     breakdownLatest.innerHTML = '';
-    breakdownSubtitle.textContent = 'Tylko w MLS + aktywne / aktywne';
+    breakdownSubtitle.textContent = `Tylko w MLS + aktywne / aktywne • ${getFilterLabel()}`;
     searchesChart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
     searchesLatest.textContent = '--';
-    searchesSubtitle.textContent = 'Snapshoty tygodniowe';
+    searchesSubtitle.textContent = `Snapshoty tygodniowe • ${getFilterLabel()}`;
     onlyMlsChart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
     onlyMlsLatest.textContent = '--';
-    onlyMlsSubtitle.textContent = 'Snapshoty tygodniowe';
+    onlyMlsSubtitle.textContent = `Snapshoty tygodniowe • ${getFilterLabel()}`;
     importSourcesChart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
     importSourcesLatest.innerHTML = '';
-    importSourcesSubtitle.textContent = 'Snapshoty tygodniowe';
+    importSourcesSubtitle.textContent = `Snapshoty tygodniowe • ${getFilterLabel()}`;
     return;
   }
 
@@ -768,7 +774,7 @@ function renderTrendCharts(metrics) {
     ${xLabels.join('')}
   `;
   setChartTooltip(breakdownChart, series, { label: 'Liczba ofert' }, breakdownSeriesConfig, width, height, margin);
-  breakdownSubtitle.textContent = `${series.length} snapshotów`;
+  breakdownSubtitle.textContent = `${series.length} snapshotów • ${getFilterLabel()}`;
   breakdownLatest.innerHTML = `
     <div class="trend-breakdown-latest-grid">
       ${breakdownSeriesConfig
@@ -841,6 +847,10 @@ function renderTrendCharts(metrics) {
       `,
     },
   );
+
+  searchesSubtitle.textContent = `${series.length} snapshotów • ${getFilterLabel()}`;
+  onlyMlsSubtitle.textContent = `${series.length} snapshotów • ${getFilterLabel()}`;
+  importSourcesSubtitle.textContent = `${series.length} snapshotów • ${getFilterLabel()}`;
 }
 
 function attachFilterHandlers(metrics) {
