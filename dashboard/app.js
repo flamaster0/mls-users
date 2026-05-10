@@ -412,6 +412,20 @@ function ensureChartTooltip(chart) {
   return tooltip;
 }
 
+function ensureChartLegend(chart) {
+  const shell = chart.parentElement;
+  if (!shell) return null;
+
+  let legend = shell.nextElementSibling;
+  if (!legend || !legend.classList.contains('chart-legend')) {
+    legend = document.createElement('div');
+    legend.className = 'chart-legend';
+    shell.insertAdjacentElement('afterend', legend);
+  }
+
+  return legend;
+}
+
 function ensureHoverLayer(chart, lineCount) {
   let layer = chart.querySelector('.chart-hover-layer');
   if (!layer) {
@@ -532,11 +546,20 @@ function renderSingleChart(series, config) {
   const latestBox = document.getElementById(config.latestId);
   const subtitle = document.getElementById(config.subtitleId);
   if (!chart || !latestBox || !subtitle) return;
+  const legend = ensureChartLegend(chart);
 
   if (series.length === 0) {
     chart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
     latestBox.textContent = '--';
     subtitle.textContent = 'Snapshoty tygodniowe';
+    if (legend) {
+      legend.innerHTML = `
+        <span class="chart-legend-item">
+          <span class="chart-legend-swatch" style="background:${config.color}"></span>
+          <span>${escapeHtml(config.label)}</span>
+        </span>
+      `;
+    }
     return;
   }
 
@@ -621,6 +644,14 @@ function renderSingleChart(series, config) {
   setChartTooltip(chart, series, config, [config], width, height, margin);
   subtitle.textContent = `${config.label} - ${getScopeLabel()} • ${series.length} snapshotów`;
   latestBox.textContent = formatNumber(series[series.length - 1][config.key]);
+  if (legend) {
+    legend.innerHTML = `
+      <span class="chart-legend-item">
+        <span class="chart-legend-swatch" style="background:${config.color}"></span>
+        <span>${escapeHtml(config.label)}</span>
+      </span>
+    `;
+  }
 }
 
 function renderMultiSeriesChart(series, config) {
@@ -628,11 +659,22 @@ function renderMultiSeriesChart(series, config) {
   const latestBox = document.getElementById(config.latestId);
   const subtitle = document.getElementById(config.subtitleId);
   if (!chart || !latestBox || !subtitle) return;
+  const legend = ensureChartLegend(chart);
 
   if (series.length === 0) {
     chart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
     latestBox.innerHTML = '';
     subtitle.textContent = 'Snapshoty tygodniowe';
+    if (legend) {
+      legend.innerHTML = config.seriesDefs
+        .map((seriesDef) => `
+          <span class="chart-legend-item">
+            <span class="chart-legend-swatch" style="background:${seriesDef.color}"></span>
+            <span>${escapeHtml(seriesDef.label)}</span>
+          </span>
+        `)
+        .join('');
+    }
     return;
   }
 
@@ -704,6 +746,16 @@ function renderMultiSeriesChart(series, config) {
   setChartTooltip(chart, series, { label: config.tooltipLabel ?? config.label ?? 'Wartość' }, config.seriesDefs, width, height, margin);
   subtitle.textContent = `${config.label} - ${getScopeLabel()} • ${series.length} snapshotów`;
   latestBox.innerHTML = config.latestRenderer(series[series.length - 1], series);
+  if (legend) {
+    legend.innerHTML = config.seriesDefs
+      .map((seriesDef) => `
+        <span class="chart-legend-item">
+          <span class="chart-legend-swatch" style="background:${seriesDef.color}"></span>
+          <span>${escapeHtml(seriesDef.label)}</span>
+        </span>
+      `)
+      .join('');
+  }
 }
 
 function renderTrendCharts(metrics) {
