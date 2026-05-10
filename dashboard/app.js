@@ -87,6 +87,21 @@ function formatYearLabel(value) {
   return new Intl.DateTimeFormat('pl-PL', { year: 'numeric' }).format(date);
 }
 
+function getXAxisLabelMode(series) {
+  if (!series.length) return 'monthly';
+  const first = new Date(`${series[0].date}T00:00:00`);
+  const last = new Date(`${series[series.length - 1].date}T00:00:00`);
+  if (Number.isNaN(first.getTime()) || Number.isNaN(last.getTime())) return 'monthly';
+  const monthSpan = (last.getFullYear() - first.getFullYear()) * 12 + (last.getMonth() - first.getMonth());
+  return monthSpan >= 18 ? 'quarterly' : 'monthly';
+}
+
+function shouldShowXAxisLabel(dateValue, mode) {
+  const month = dateValue.slice(5, 7);
+  if (mode === 'quarterly') return ['01', '04', '07', '10'].includes(month);
+  return true;
+}
+
 function setPageLoading(isLoading) {
   document.body.classList.toggle('is-loading', isLoading);
   document.body.setAttribute('aria-busy', isLoading ? 'true' : 'false');
@@ -687,10 +702,11 @@ function renderSingleChart(series, config) {
     });
   }
 
+  const xAxisMode = getXAxisLabelMode(series);
   const xLabels = series.map((row, index) => {
     const prev = series[index - 1];
     const isFirstOfMonth = !prev || row.date.slice(0, 7) !== prev.date.slice(0, 7);
-    if (!isFirstOfMonth) return '';
+    if (!isFirstOfMonth || !shouldShowXAxisLabel(row.date, xAxisMode)) return '';
     const x = xForIndex(index);
     const isFirstOfYear = row.date.slice(5, 7) === '01';
     const monthLabel = escapeHtml(formatMonthLabel(row.date));
@@ -826,10 +842,11 @@ function renderMultiSeriesChart(series, config) {
     `);
   }
 
+  const xAxisMode = getXAxisLabelMode(series);
   const xLabels = series.map((row, index) => {
     const prev = series[index - 1];
     const isFirstOfMonth = !prev || row.date.slice(0, 7) !== prev.date.slice(0, 7);
-    if (!isFirstOfMonth) return '';
+    if (!isFirstOfMonth || !shouldShowXAxisLabel(row.date, xAxisMode)) return '';
     const x = xForIndex(index);
     const isFirstOfYear = row.date.slice(5, 7) === '01';
     const monthLabel = escapeHtml(formatMonthLabel(row.date));
@@ -962,10 +979,11 @@ function renderTrendCharts(metrics) {
     `);
   }
 
+  const xAxisMode = getXAxisLabelMode(series);
   const xLabels = series.map((row, index) => {
     const prev = series[index - 1];
     const isFirstOfMonth = !prev || row.date.slice(0, 7) !== prev.date.slice(0, 7);
-    if (!isFirstOfMonth) return '';
+    if (!isFirstOfMonth || !shouldShowXAxisLabel(row.date, xAxisMode)) return '';
     const x = xForIndex(index);
     const isFirstOfYear = row.date.slice(5, 7) === '01';
     const monthLabel = escapeHtml(formatMonthLabel(row.date));
