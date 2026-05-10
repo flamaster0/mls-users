@@ -103,6 +103,16 @@ function getAxisBounds(values, config, step = 50) {
   };
 }
 
+function getAdaptiveTickStep(values, fallbackStep = 50) {
+  const dataMin = Math.min(...values);
+  const dataMax = Math.max(...values);
+  const visibleRange = Math.max(1, dataMax - dataMin);
+  const rawStep = visibleRange / 5;
+  const preferredBase = fallbackStep > 0 ? fallbackStep : 50;
+  const candidate = Math.max(10, Math.round(rawStep / 10) * 10);
+  return Math.max(10, Math.min(preferredBase, candidate));
+}
+
 function compareValues(a, b, key) {
   if (key === 'name') {
     return a.name.localeCompare(b.name, 'pl', { sensitivity: 'base' });
@@ -532,7 +542,8 @@ function renderSingleChart(series, config) {
   const innerHeight = height - margin.top - margin.bottom;
 
   const dataMaxValue = Math.max(1, ...series.map((row) => row[config.key] ?? 0));
-  const bounds = getAxisBounds([...(series.map((row) => row[config.key] ?? 0)), dataMaxValue], config, config.yTickStep ?? 50);
+  const values = [...series.map((row) => row[config.key] ?? 0), dataMaxValue];
+  const bounds = getAxisBounds(values, config, config.yTickStep ?? 50);
   const minValue = bounds.minValue;
   const maxValue = bounds.maxValue;
   const xForIndex = (index) => margin.left + (series.length === 1 ? innerWidth / 2 : (index / (series.length - 1)) * innerWidth);
@@ -540,7 +551,9 @@ function renderSingleChart(series, config) {
   const yForValue = (value) => margin.top + innerHeight - ((value - minValue) / range) * innerHeight;
 
   const grid = [];
-  const tickStep = config.yTickStep ?? null;
+  const tickStep = shouldAutoScaleTrend()
+    ? getAdaptiveTickStep(values, config.yTickStep ?? 50)
+    : (config.yTickStep ?? null);
   if (tickStep) {
     const start = Math.ceil(maxValue / tickStep) * tickStep;
     for (let value = start; value >= minValue; value -= tickStep) {
@@ -633,7 +646,9 @@ function renderMultiSeriesChart(series, config) {
   const yForValue = (value) => margin.top + innerHeight - ((value - minValue) / range) * innerHeight;
 
   const grid = [];
-  const gridStep = config.gridStep ?? config.yTickStep ?? 500;
+  const gridStep = shouldAutoScaleTrend()
+    ? getAdaptiveTickStep(values, config.gridStep ?? config.yTickStep ?? 500)
+    : (config.gridStep ?? config.yTickStep ?? 500);
   const start = Math.ceil(maxValue / gridStep) * gridStep;
   for (let value = start; value >= minValue; value -= gridStep) {
     const ratio = (value - minValue) / range;
