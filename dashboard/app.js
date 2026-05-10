@@ -28,9 +28,6 @@ const seriesConfig = [
   { key: 'offices', label: 'Liczba biur', color: '#7dd3fc' },
   { key: 'agents', label: 'Liczba agentów', color: '#f59e0b' },
   { key: 'offers', label: 'Liczba ofert', color: '#a78bfa' },
-  { key: 'onlyMls', label: 'Oferty tylko w MLS', color: '#34d399' },
-  { key: 'active', label: 'Oferty aktywne', color: '#fb7185' },
-  { key: 'onlyMlsActive', label: 'Only MLS + aktywne', color: '#facc15' },
 ];
 
 const state = {
@@ -142,9 +139,6 @@ function buildTrendSeries(metrics) {
       offices: row.officesSet.size,
       agents: row.agents,
       offers: row.offers,
-      onlyMls: row.onlyMls,
-      active: row.active,
-      onlyMlsActive: row.onlyMls + row.active,
     }));
 }
 
