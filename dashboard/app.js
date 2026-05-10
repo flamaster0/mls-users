@@ -247,6 +247,63 @@ function renderImportBreakdown(metrics) {
   });
 }
 
+function renderOfferStatusChart(metrics) {
+  const chart = document.getElementById('offer-status-chart');
+  const summary = document.getElementById('status-summary');
+  if (!chart || !summary) return;
+
+  const breakdown = metrics?.offer_status_breakdown ?? {};
+  const rows = [
+    { key: 'active', label: 'Aktywne', color: '#5D9F4F' },
+    { key: 'only_mls', label: 'Only MLS', color: '#60BCB2' },
+    { key: 'suspended', label: 'Suspended', color: '#fb7185' },
+    { key: 'archive', label: 'Archiwum', color: '#7dd3fc' },
+    { key: 'withdrawn', label: 'Wycofane', color: '#94a3b8' },
+    { key: 'blocked', label: 'Zablokowane', color: '#f59e0b' },
+    { key: 'draft', label: 'Robocze', color: '#cbd5e1' },
+  ].map((item) => ({
+    ...item,
+    value: Number(breakdown[item.key]) || 0,
+  }));
+
+  const total = rows.reduce((sum, row) => sum + row.value, 0);
+  if (!total) {
+    chart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych o statusach ofert.</text>';
+    summary.textContent = '--';
+    return;
+  }
+
+  const width = 1120;
+  const height = 360;
+  const margin = { top: 22, right: 28, bottom: 24, left: 220 };
+  const innerWidth = width - margin.left - margin.right;
+  const rowHeight = 40;
+  const barHeight = 20;
+  const maxValue = Math.max(...rows.map((row) => row.value), 1);
+
+  const bars = rows
+    .map((row, index) => {
+      const y = margin.top + index * rowHeight;
+      const barWidth = (row.value / maxValue) * innerWidth;
+      const share = total ? Math.round((row.value / total) * 100) : 0;
+      return `
+        <g>
+          <text class="status-bar-label" x="${margin.left - 14}" y="${y + 14}" text-anchor="end">${escapeHtml(row.label)}</text>
+          <rect x="${margin.left}" y="${y}" width="${innerWidth}" height="${barHeight}" rx="10" fill="rgba(255, 255, 255, 0.05)" />
+          <rect x="${margin.left}" y="${y}" width="${barWidth}" height="${barHeight}" rx="10" fill="${row.color}" opacity="0.9" />
+          <text class="status-bar-value" x="${margin.left + Math.max(barWidth + 12, 12)}" y="${y + 14}">
+            ${formatNumber(row.value)} • ${share}%
+          </text>
+        </g>
+      `;
+    })
+    .join('');
+
+  chart.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  chart.innerHTML = bars;
+  summary.textContent = `Razem statusy: ${formatNumber(total)} • archiwum: ${formatNumber(breakdown.archive)} • wycofane: ${formatNumber(breakdown.withdrawn)}`;
+}
+
 function getTrendYears(metrics) {
   const rows = Array.isArray(metrics?.trend_rows) ? metrics.trend_rows : [];
   const years = Array.from(new Set(rows.map((row) => String(row?.date ?? '').slice(0, 4)).filter((year) => /^\d{4}$/.test(year))));
@@ -1210,6 +1267,7 @@ function attachFilterHandlers(metrics) {
 const metrics = (await loadMetrics()) ?? fallbackMetrics;
 renderCards(metrics);
 renderImportBreakdown(metrics);
+renderOfferStatusChart(metrics);
 renderTopAgencies(metrics);
 attachTableSortHandlers(metrics);
 attachTableLimitHandler(metrics);

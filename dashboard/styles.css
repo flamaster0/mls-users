@@ -442,6 +442,29 @@ tbody tr:hover {
   line-height: 1.35;
 }
 
+.status-panel {
+  margin-bottom: 16px;
+}
+
+.status-chart-shell {
+  min-height: 360px;
+}
+
+.status-summary {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.status-bar-label {
+  fill: var(--text);
+  font-size: 12px;
+}
+
+.status-bar-value {
+  fill: var(--muted);
+  font-size: 12px;
+}
+
 .chart-legend {
   display: flex;
   flex-wrap: wrap;

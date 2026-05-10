@@ -100,6 +100,12 @@ def build_biura_metrics():
         return [r.get(name) for r in rows]
 
     active_offers = sum(to_int(v) or 0 for v in field("Oferty: aktywne (3)"))
+    only_mls_offers = sum(to_int(v) or 0 for v in field("Oferty: only_mls (99)"))
+    suspended_offers = sum(to_int(v) or 0 for v in field("Oferty: zawieszone (81)"))
+    blocked_offers = sum(to_int(v) or 0 for v in field("Oferty: zablokowane (8)"))
+    draft_offers = sum(to_int(v) or 0 for v in field("Oferty: robocze (52)"))
+    archive_offers = sum(to_int(v) or 0 for v in field("Oferty: archiwum (7)"))
+    withdrawn_offers = sum(to_int(v) or 0 for v in field("Oferty: wycofane (9)"))
     import_flags = [clean_text(v).lower() for v in field("Czy import ofert")]
     import_sources = [clean_text(v) for v in field("Źródła importu")]
     imported_agencies = sum(1 for v in import_flags if v == "tak")
@@ -133,6 +139,12 @@ def build_biura_metrics():
         "path": path.name,
         "biura": len(rows),
         "active_offers": active_offers,
+        "only_mls_offers": only_mls_offers,
+        "suspended_offers": suspended_offers,
+        "blocked_offers": blocked_offers,
+        "draft_offers": draft_offers,
+        "archive_offers": archive_offers,
+        "withdrawn_offers": withdrawn_offers,
         "imported_agencies": imported_agencies,
         "manual_agencies": manual_agencies,
         "asari_agencies": asari_agencies,
@@ -235,6 +247,15 @@ def main() -> None:
             "asari": biura["asari_agencies"],
             "esti": biura["esti_agencies"],
             "other": biura["other_agencies"],
+        },
+        "offer_status_breakdown": {
+            "active": biura["active_offers"],
+            "only_mls": biura["only_mls_offers"],
+            "suspended": biura["suspended_offers"],
+            "blocked": biura["blocked_offers"],
+            "draft": biura["draft_offers"],
+            "archive": biura["archive_offers"],
+            "withdrawn": biura["withdrawn_offers"],
         },
         "top_agencies": biura["top_agencies"],
         "trend_rows": trend_rows,
