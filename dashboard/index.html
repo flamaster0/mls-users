@@ -49,7 +49,7 @@
       </section>
 
       <section class="grid">
-        <section class="panel panel-large trend-panel">
+        <section class="panel panel-wide trend-panel">
           <div class="panel-head trend-head">
             <div>
               <h2 id="trend-title">Trend</h2>
@@ -66,11 +66,49 @@
               </label>
             </div>
           </div>
-          <div class="chart-shell">
-            <svg id="trend-chart" class="trend-chart" viewBox="0 0 1120 420" role="img" aria-label="Wykres trendu"></svg>
+          <div class="trend-grid">
+            <section class="mini-panel">
+              <div class="mini-head">
+                <h3>Liczba biur</h3>
+                <p id="trend-office-subtitle">Snapshoty tygodniowe</p>
+              </div>
+              <div class="chart-shell">
+                <svg id="trend-offices-chart" class="trend-chart" viewBox="0 0 1120 280" role="img" aria-label="Wykres liczby biur"></svg>
+              </div>
+              <div class="trend-latest-card trend-latest-card-single">
+                <span>Aktualna wartość</span>
+                <strong id="trend-offices-latest">--</strong>
+              </div>
+            </section>
+
+            <section class="mini-panel">
+              <div class="mini-head">
+                <h3>Liczba agentów</h3>
+                <p id="trend-agents-subtitle">Snapshoty tygodniowe</p>
+              </div>
+              <div class="chart-shell">
+                <svg id="trend-agents-chart" class="trend-chart" viewBox="0 0 1120 280" role="img" aria-label="Wykres liczby agentów"></svg>
+              </div>
+              <div class="trend-latest-card trend-latest-card-single">
+                <span>Aktualna wartość</span>
+                <strong id="trend-agents-latest">--</strong>
+              </div>
+            </section>
+
+            <section class="mini-panel">
+              <div class="mini-head">
+                <h3>Liczba ofert</h3>
+                <p id="trend-offers-subtitle">Snapshoty tygodniowe</p>
+              </div>
+              <div class="chart-shell">
+                <svg id="trend-offers-chart" class="trend-chart" viewBox="0 0 1120 280" role="img" aria-label="Wykres liczby ofert"></svg>
+              </div>
+              <div class="trend-latest-card trend-latest-card-single">
+                <span>Aktualna wartość</span>
+                <strong id="trend-offers-latest">--</strong>
+              </div>
+            </section>
           </div>
-          <div id="trend-legend" class="trend-legend" aria-label="Legenda wykresu"></div>
-          <div id="trend-latest" class="trend-latest"></div>
         </section>
 
         <section class="panel panel-wide">

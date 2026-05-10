@@ -24,10 +24,10 @@ const fallbackMetrics = {
   },
 };
 
-const seriesConfig = [
-  { key: 'offices', label: 'Liczba biur', color: '#7dd3fc' },
-  { key: 'agents', label: 'Liczba agentów', color: '#f59e0b' },
-  { key: 'offers', label: 'Liczba ofert', color: '#a78bfa' },
+const chartConfigs = [
+  { key: 'offices', label: 'Liczba biur', color: '#7dd3fc', svgId: 'trend-offices-chart', latestId: 'trend-offices-latest', subtitleId: 'trend-office-subtitle' },
+  { key: 'agents', label: 'Liczba agentów', color: '#f59e0b', svgId: 'trend-agents-chart', latestId: 'trend-agents-latest', subtitleId: 'trend-agents-subtitle' },
+  { key: 'offers', label: 'Liczba ofert', color: '#a78bfa', svgId: 'trend-offers-chart', latestId: 'trend-offers-latest', subtitleId: 'trend-offers-subtitle' },
 ];
 
 const state = {
@@ -147,34 +147,27 @@ function pathFromPoints(points) {
   return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(' ');
 }
 
-function renderTrendChart(metrics) {
-  const chart = document.getElementById('trend-chart');
-  const legendBox = document.getElementById('trend-legend');
-  const latestBox = document.getElementById('trend-latest');
-  const title = document.getElementById('trend-title');
-  const subtitle = document.getElementById('trend-subtitle');
-  if (!chart || !legendBox || !latestBox || !title || !subtitle) return;
+function renderSingleChart(series, config) {
+  const chart = document.getElementById(config.svgId);
+  const latestBox = document.getElementById(config.latestId);
+  const subtitle = document.getElementById(config.subtitleId);
+  if (!chart || !latestBox || !subtitle) return;
 
-  const series = buildTrendSeries(metrics);
   if (series.length === 0) {
     chart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
-    legendBox.innerHTML = '';
-    latestBox.innerHTML = '<div class="trend-placeholder">Brak danych dla tego filtra.</div>';
-    title.textContent = 'Trend';
+    latestBox.textContent = '--';
     subtitle.textContent = 'Snapshoty tygodniowe';
     return;
   }
 
   const width = 1120;
-  const height = 420;
-  const margin = { top: 24, right: 28, bottom: 44, left: 58 };
+  const height = 280;
+  const margin = { top: 18, right: 22, bottom: 38, left: 54 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
-  const values = series.flatMap((row) => seriesConfig.map((config) => row[config.key] ?? 0));
-  const maxValue = Math.max(1, ...values);
+  const maxValue = Math.max(1, ...series.map((row) => row[config.key] ?? 0));
   const minValue = 0;
-
   const xForIndex = (index) => margin.left + (series.length === 1 ? innerWidth / 2 : (index / (series.length - 1)) * innerWidth);
   const yForValue = (value) => margin.top + innerHeight - ((value - minValue) / (maxValue - minValue)) * innerHeight;
 
@@ -186,7 +179,7 @@ function renderTrendChart(metrics) {
     return `
       <g>
         <line x1="${margin.left}" x2="${width - margin.right}" y1="${y}" y2="${y}" stroke="rgba(148, 163, 184, 0.14)" />
-        <text x="${margin.left - 12}" y="${y + 4}" text-anchor="end" fill="#9fb0c7" font-size="12">${formatNumber(value)}</text>
+        <text x="${margin.left - 10}" y="${y + 4}" text-anchor="end" fill="#9fb0c7" font-size="12">${formatNumber(value)}</text>
       </g>
     `;
   });
@@ -194,62 +187,37 @@ function renderTrendChart(metrics) {
   const xLabels = series.map((row, index) => {
     if (index !== 0 && index !== series.length - 1 && index % 3 !== 0) return '';
     const x = xForIndex(index);
-    return `<text x="${x}" y="${height - 12}" text-anchor="middle" fill="#9fb0c7" font-size="12">${escapeHtml(row.date)}</text>`;
+    return `<text x="${x}" y="${height - 10}" text-anchor="middle" fill="#9fb0c7" font-size="12">${escapeHtml(row.date)}</text>`;
   });
 
-  const lines = seriesConfig
-    .map((config) => {
-      const points = series.map((row, index) => ({ x: xForIndex(index), y: yForValue(row[config.key] ?? 0) }));
-      return {
-        config,
-        points,
-        path: pathFromPoints(points),
-      };
-    })
-    .map(({ config, path, points }) => {
-      const last = points[points.length - 1];
-      return `
-        <path d="${path}" fill="none" stroke="${config.color}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
-        <circle cx="${last.x}" cy="${last.y}" r="4.5" fill="${config.color}" stroke="rgba(7, 17, 31, 0.9)" stroke-width="2" />
-      `;
-    })
-    .join('');
+  const points = series.map((row, index) => ({ x: xForIndex(index), y: yForValue(row[config.key] ?? 0) }));
+  const path = pathFromPoints(points);
+  const last = points[points.length - 1];
 
   chart.setAttribute('viewBox', `0 0 ${width} ${height}`);
   chart.innerHTML = `
     ${grid.join('')}
-    ${lines}
+    <path d="${path}" fill="none" stroke="${config.color}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="${last.x}" cy="${last.y}" r="4.5" fill="${config.color}" stroke="rgba(7, 17, 31, 0.9)" stroke-width="2" />
     ${xLabels.join('')}
   `;
-  legendBox.innerHTML = seriesConfig
-    .map(
-      (config) => `
-        <span class="trend-legend-item">
-          <span class="trend-legend-swatch" style="background:${config.color}"></span>
-          ${config.label}
-        </span>
-      `,
-    )
-    .join('');
 
-  title.textContent = `Trend: ${state.region === 'ALL' ? 'Wszystkie regiony' : state.region}${state.city === 'ALL' ? '' : ` / ${state.city}`}`;
   subtitle.textContent = `${series.length} snapshotów`;
+  latestBox.textContent = formatNumber(series[series.length - 1][config.key]);
+}
 
-  const latest = series[series.length - 1];
-  latestBox.innerHTML = `
-    <div class="trend-latest-grid">
-      ${seriesConfig
-        .map(
-          (config) => `
-            <div class="trend-latest-card">
-              <span>${config.label}</span>
-              <strong>${formatNumber(latest[config.key])}</strong>
-            </div>
-          `,
-        )
-        .join('')}
-    </div>
-  `;
+function renderTrendCharts(metrics) {
+  const title = document.getElementById('trend-title');
+  const subtitle = document.getElementById('trend-subtitle');
+  if (!title || !subtitle) return;
+
+  const series = buildTrendSeries(metrics);
+  title.textContent = `Trend: ${state.region === 'ALL' ? 'Wszystkie regiony' : state.region}${state.city === 'ALL' ? '' : ` / ${state.city}`}`;
+  subtitle.textContent = series.length ? `${series.length} snapshotów` : 'Snapshoty tygodniowe';
+
+  for (const config of chartConfigs) {
+    renderSingleChart(series, config);
+  }
 }
 
 function attachFilterHandlers(metrics) {
@@ -261,12 +229,12 @@ function attachFilterHandlers(metrics) {
     state.region = regionSelect.value;
     state.city = 'ALL';
     populateFilters(metrics);
-    renderTrendChart(metrics);
+    renderTrendCharts(metrics);
   });
 
   citySelect.addEventListener('change', () => {
     state.city = citySelect.value;
-    renderTrendChart(metrics);
+    renderTrendCharts(metrics);
   });
 }
 
@@ -275,4 +243,4 @@ renderCards(metrics);
 renderTopAgencies(metrics);
 populateFilters(metrics);
 attachFilterHandlers(metrics);
-renderTrendChart(metrics);
+renderTrendCharts(metrics);
