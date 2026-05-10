@@ -37,6 +37,8 @@ const breakdownSeriesConfig = [
 const state = {
   region: 'ALL',
   city: 'ALL',
+  yearFrom: 'ALL',
+  yearTo: 'ALL',
   sortKey: 'active_offers',
   sortDirection: 'desc',
   topAgenciesLimit: 10,
@@ -125,6 +127,12 @@ function renderImportBreakdown(metrics) {
       cards[index].textContent = formatNumber(value);
     }
   });
+}
+
+function getTrendYears(metrics) {
+  const rows = Array.isArray(metrics?.trend_rows) ? metrics.trend_rows : [];
+  const years = Array.from(new Set(rows.map((row) => String(row?.date ?? '').slice(0, 4)).filter((year) => /^\d{4}$/.test(year))));
+  return years.sort((a, b) => Number(a) - Number(b));
 }
 
 function renderTopAgencies(metrics) {
@@ -221,7 +229,9 @@ function getFilteredCities(metrics) {
 function populateFilters(metrics) {
   const regionSelect = document.getElementById('region-filter');
   const citySelect = document.getElementById('city-filter');
-  if (!regionSelect || !citySelect) return;
+  const yearFromSelect = document.getElementById('year-from-filter');
+  const yearToSelect = document.getElementById('year-to-filter');
+  if (!regionSelect || !citySelect || !yearFromSelect || !yearToSelect) return;
 
   const regions = metrics.trend_dimensions?.regions ?? [];
   const regionOptions = ['<option value="ALL">Wszystkie regiony</option>']
@@ -237,6 +247,19 @@ function populateFilters(metrics) {
   citySelect.innerHTML = cityOptions;
   citySelect.value = state.city;
   citySelect.disabled = cities.length === 0;
+
+  const years = getTrendYears(metrics);
+  const yearOptions = years.map((year) => `<option value="${escapeHtml(year)}">${escapeHtml(year)}</option>`).join('');
+  yearFromSelect.innerHTML = yearOptions;
+  yearToSelect.innerHTML = yearOptions;
+
+  if (years.length > 0) {
+    if (!years.includes(state.yearFrom)) state.yearFrom = years[0];
+    if (!years.includes(state.yearTo)) state.yearTo = years[years.length - 1];
+  }
+
+  yearFromSelect.value = state.yearFrom;
+  yearToSelect.value = state.yearTo;
 }
 
 function buildTrendSeries(metrics) {
@@ -244,6 +267,9 @@ function buildTrendSeries(metrics) {
   const filteredRows = rows.filter((row) => {
     if (state.region !== 'ALL' && row.region !== state.region) return false;
     if (state.city !== 'ALL' && row.city !== state.city) return false;
+    const year = String(row?.date ?? '').slice(0, 4);
+    if (state.yearFrom !== 'ALL' && year < state.yearFrom) return false;
+    if (state.yearTo !== 'ALL' && year > state.yearTo) return false;
     return true;
   });
 
@@ -280,7 +306,28 @@ function buildTrendSeries(metrics) {
 
 function pathFromPoints(points) {
   if (!points.length) return '';
-  return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(' ');
+  if (points.length < 2) {
+    return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(' ');
+  }
+
+  const tension = 0.18;
+  const path = [`M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`];
+
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const current = points[index];
+    const next = points[index + 1];
+    const prev = points[index - 1] ?? current;
+    const nextNext = points[index + 2] ?? next;
+
+    const cp1x = current.x + (next.x - prev.x) * tension;
+    const cp1y = current.y + (next.y - prev.y) * tension;
+    const cp2x = next.x - (nextNext.x - current.x) * tension;
+    const cp2y = next.y - (nextNext.y - current.y) * tension;
+
+    path.push(`C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)} ${cp2x.toFixed(2)} ${cp2y.toFixed(2)} ${next.x.toFixed(2)} ${next.y.toFixed(2)}`);
+  }
+
+  return path.join(' ');
 }
 
 function ensureChartTooltip(chart) {
@@ -468,7 +515,9 @@ function renderTrendCharts(metrics) {
 
   const series = buildTrendSeries(metrics);
   title.textContent = `Trend: ${state.region === 'ALL' ? 'Wszystkie regiony' : state.region}${state.city === 'ALL' ? '' : ` / ${state.city}`}`;
-  subtitle.textContent = series.length ? `${series.length} snapshotów` : 'Snapshoty tygodniowe';
+  subtitle.textContent = series.length
+    ? `${series.length} snapshotów • lata ${state.yearFrom === 'ALL' ? 'wszystkie' : state.yearFrom}-${state.yearTo === 'ALL' ? 'wszystkie' : state.yearTo}`
+    : 'Snapshoty tygodniowe';
 
   for (const config of chartConfigs) {
     renderSingleChart(series, config);
@@ -585,7 +634,9 @@ function renderTrendCharts(metrics) {
 function attachFilterHandlers(metrics) {
   const regionSelect = document.getElementById('region-filter');
   const citySelect = document.getElementById('city-filter');
-  if (!regionSelect || !citySelect) return;
+  const yearFromSelect = document.getElementById('year-from-filter');
+  const yearToSelect = document.getElementById('year-to-filter');
+  if (!regionSelect || !citySelect || !yearFromSelect || !yearToSelect) return;
 
   regionSelect.addEventListener('change', () => {
     state.region = regionSelect.value;
@@ -596,6 +647,24 @@ function attachFilterHandlers(metrics) {
 
   citySelect.addEventListener('change', () => {
     state.city = citySelect.value;
+    renderTrendCharts(metrics);
+  });
+
+  yearFromSelect.addEventListener('change', () => {
+    state.yearFrom = yearFromSelect.value;
+    if (state.yearTo !== 'ALL' && state.yearFrom !== 'ALL' && Number(state.yearFrom) > Number(state.yearTo)) {
+      state.yearTo = state.yearFrom;
+    }
+    populateFilters(metrics);
+    renderTrendCharts(metrics);
+  });
+
+  yearToSelect.addEventListener('change', () => {
+    state.yearTo = yearToSelect.value;
+    if (state.yearFrom !== 'ALL' && state.yearTo !== 'ALL' && Number(state.yearTo) < Number(state.yearFrom)) {
+      state.yearFrom = state.yearTo;
+    }
+    populateFilters(metrics);
     renderTrendCharts(metrics);
   });
 }
