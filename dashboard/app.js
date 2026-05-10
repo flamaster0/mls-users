@@ -25,8 +25,8 @@ const fallbackMetrics = {
 };
 
 const chartConfigs = [
-  { key: 'offices', label: 'Liczba biur', color: '#7dd3fc', svgId: 'trend-offices-chart', latestId: 'trend-offices-latest', subtitleId: 'trend-office-subtitle' },
-  { key: 'agents', label: 'Liczba agentów', color: '#f59e0b', svgId: 'trend-agents-chart', latestId: 'trend-agents-latest', subtitleId: 'trend-agents-subtitle' },
+  { key: 'offices', label: 'Liczba biur', color: '#7dd3fc', svgId: 'trend-offices-chart', latestId: 'trend-offices-latest', subtitleId: 'trend-office-subtitle', minValue: 400, yTickStep: 50 },
+  { key: 'agents', label: 'Liczba agentów', color: '#f59e0b', svgId: 'trend-agents-chart', latestId: 'trend-agents-latest', subtitleId: 'trend-agents-subtitle', minValue: 3000, yTickStep: 500 },
 ];
 
 const breakdownSeriesConfig = [
@@ -385,22 +385,40 @@ function renderSingleChart(series, config) {
   const innerHeight = height - margin.top - margin.bottom;
 
   const maxValue = Math.max(1, ...series.map((row) => row[config.key] ?? 0));
-  const minValue = 0;
+  const minValue = Math.min(config.minValue ?? 0, maxValue);
   const xForIndex = (index) => margin.left + (series.length === 1 ? innerWidth / 2 : (index / (series.length - 1)) * innerWidth);
-  const yForValue = (value) => margin.top + innerHeight - ((value - minValue) / (maxValue - minValue)) * innerHeight;
+  const range = Math.max(1, maxValue - minValue);
+  const yForValue = (value) => margin.top + innerHeight - ((value - minValue) / range) * innerHeight;
 
-  const gridLines = 4;
-  const grid = Array.from({ length: gridLines + 1 }, (_, index) => {
-    const ratio = index / gridLines;
-    const value = Math.round(maxValue * (1 - ratio));
-    const y = margin.top + ratio * innerHeight;
-    return `
-      <g>
-        <line x1="${margin.left}" x2="${width - margin.right}" y1="${y}" y2="${y}" stroke="rgba(148, 163, 184, 0.14)" />
-        <text x="${margin.left - 10}" y="${y + 4}" text-anchor="end" fill="#9fb0c7" font-size="12">${formatNumber(value)}</text>
-      </g>
-    `;
-  });
+  const grid = [];
+  const tickStep = config.yTickStep ?? null;
+  if (tickStep) {
+    const start = Math.ceil(maxValue / tickStep) * tickStep;
+    for (let value = start; value >= minValue; value -= tickStep) {
+      const ratio = (value - minValue) / range;
+      const y = margin.top + innerHeight - ratio * innerHeight;
+      grid.push(`
+        <g>
+          <line x1="${margin.left}" x2="${width - margin.right}" y1="${y}" y2="${y}" stroke="rgba(148, 163, 184, 0.14)" />
+          <text x="${margin.left - 10}" y="${y + 4}" text-anchor="end" fill="#9fb0c7" font-size="12">${formatNumber(value)}</text>
+        </g>
+      `);
+    }
+  } else {
+    const gridLines = 4;
+    Array.from({ length: gridLines + 1 }, (_, index) => {
+      const ratio = index / gridLines;
+      const value = Math.round(minValue + ((maxValue - minValue) * (1 - ratio)));
+      const y = margin.top + ratio * innerHeight;
+      grid.push(`
+        <g>
+          <line x1="${margin.left}" x2="${width - margin.right}" y1="${y}" y2="${y}" stroke="rgba(148, 163, 184, 0.14)" />
+          <text x="${margin.left - 10}" y="${y + 4}" text-anchor="end" fill="#9fb0c7" font-size="12">${formatNumber(value)}</text>
+        </g>
+      `);
+      return null;
+    });
+  }
 
   const xLabels = series.map((row, index) => {
     const prev = series[index - 1];
@@ -474,22 +492,22 @@ function renderTrendCharts(metrics) {
 
   const values = series.flatMap((row) => breakdownSeriesConfig.map((config) => row[config.key] ?? 0));
   const maxValue = Math.max(1, ...values);
-  const minValue = 0;
+  const minValue = 5000;
   const xForIndex = (index) => margin.left + (series.length === 1 ? innerWidth / 2 : (index / (series.length - 1)) * innerWidth);
-  const yForValue = (value) => margin.top + innerHeight - ((value - minValue) / (maxValue - minValue)) * innerHeight;
+  const range = Math.max(1, maxValue - minValue);
+  const yForValue = (value) => margin.top + innerHeight - ((value - minValue) / range) * innerHeight;
 
-  const gridLines = 4;
-  const grid = Array.from({ length: gridLines + 1 }, (_, index) => {
-    const ratio = index / gridLines;
-    const value = Math.round(maxValue * (1 - ratio));
-    const y = margin.top + ratio * innerHeight;
-    return `
+  const grid = [];
+  for (let value = Math.ceil(maxValue / 500) * 500; value >= minValue; value -= 500) {
+    const ratio = (value - minValue) / range;
+    const y = margin.top + innerHeight - ratio * innerHeight;
+    grid.push(`
       <g>
         <line x1="${margin.left}" x2="${width - margin.right}" y1="${y}" y2="${y}" stroke="rgba(148, 163, 184, 0.14)" />
         <text x="${margin.left - 10}" y="${y + 4}" text-anchor="end" fill="#9fb0c7" font-size="12">${formatNumber(value)}</text>
       </g>
-    `;
-  });
+    `);
+  }
 
   const xLabels = series.map((row, index) => {
     const prev = series[index - 1];
@@ -549,6 +567,8 @@ function renderTrendCharts(metrics) {
       svgId: 'trend-only-mls-chart',
       latestId: 'trend-only-mls-latest',
       subtitleId: 'trend-only-mls-subtitle',
+      minValue: 400,
+      yTickStep: 50,
     },
   );
 }

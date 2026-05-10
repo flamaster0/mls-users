@@ -68,7 +68,7 @@ def build_biura_metrics():
         rows,
         key=lambda r: (to_int(r.get("Oferty: aktywne (3)")) or 0, to_int(r.get("Liczba użytkowników")) or 0),
         reverse=True,
-    )[:10]
+    )[:100]
     top_agencies = [
         {
             "name": clean_text(r.get("Nazwa biura")),
