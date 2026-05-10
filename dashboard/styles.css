@@ -28,6 +28,68 @@ body {
   overflow-x: hidden;
 }
 
+body.is-loading {
+  overflow: hidden;
+}
+
+body.is-loading .shell {
+  visibility: hidden;
+}
+
+body.is-loading .bg-orb {
+  opacity: 0.25;
+}
+
+.page-loader {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(32, 32, 32, 0.94);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+}
+
+.page-loader-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(32, 32, 32, 0.9);
+  box-shadow: none;
+}
+
+.page-loader-card p {
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.page-loader-card span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.page-loader-spinner {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--accent);
+  animation: loader-spin 0.9s linear infinite;
+  flex: 0 0 auto;
+}
+
+@keyframes loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .bg-orb {
   display: none;
 }

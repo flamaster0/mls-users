@@ -87,6 +87,15 @@ function formatYearLabel(value) {
   return new Intl.DateTimeFormat('pl-PL', { year: 'numeric' }).format(date);
 }
 
+function setPageLoading(isLoading) {
+  document.body.classList.toggle('is-loading', isLoading);
+  document.body.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+  const loader = document.getElementById('page-loader');
+  if (loader) {
+    loader.style.display = isLoading ? 'grid' : 'none';
+  }
+}
+
 function buildSemiannualGuideLines(series, xForIndex, height, margin) {
   const startY = margin.top;
   const endY = height - margin.bottom;
@@ -1065,3 +1074,4 @@ attachTableLimitHandler(metrics);
 populateFilters(metrics);
 attachFilterHandlers(metrics);
 renderTrendCharts(metrics);
+setPageLoading(false);

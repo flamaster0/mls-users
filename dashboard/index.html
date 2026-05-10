@@ -6,9 +6,18 @@
     <title>MLS Users</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body>
+  <body class="is-loading" aria-busy="true">
     <div class="bg-orb orb-a"></div>
     <div class="bg-orb orb-b"></div>
+    <div id="page-loader" class="page-loader" role="status" aria-live="polite" aria-label="Ładowanie danych">
+      <div class="page-loader-card">
+        <div class="page-loader-spinner" aria-hidden="true"></div>
+        <div>
+          <p>Ładowanie danych MLS</p>
+          <span>To może potrwać chwilę przy dużym pliku JSON.</span>
+        </div>
+      </div>
+    </div>
     <main class="shell">
       <header class="hero">
         <div>
