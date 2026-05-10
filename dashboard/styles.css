@@ -1,14 +1,14 @@
 :root {
   color-scheme: dark;
-  --bg: #07111f;
-  --bg-soft: rgba(13, 23, 40, 0.72);
-  --panel: rgba(13, 23, 40, 0.86);
-  --line: rgba(148, 163, 184, 0.18);
-  --text: #e5eef9;
-  --muted: #9fb0c7;
+  --bg: #202020;
+  --bg-soft: #202020;
+  --panel: #202020;
+  --line: rgba(255, 255, 255, 0.12);
+  --text: #f1f1f1;
+  --muted: #b6b6b6;
   --accent: #7dd3fc;
   --accent-2: #f59e0b;
-  --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+  --shadow: none;
 }
 
 * {
@@ -18,10 +18,7 @@
 html, body {
   margin: 0;
   min-height: 100%;
-  background:
-    radial-gradient(circle at top left, rgba(125, 211, 252, 0.14), transparent 32%),
-    radial-gradient(circle at bottom right, rgba(245, 158, 11, 0.12), transparent 28%),
-    linear-gradient(180deg, #050b14 0%, #091422 55%, #070d17 100%);
+  background: #202020;
   color: var(--text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -32,25 +29,7 @@ body {
 }
 
 .bg-orb {
-  position: fixed;
-  width: 32rem;
-  height: 32rem;
-  border-radius: 50%;
-  filter: blur(60px);
-  opacity: 0.28;
-  pointer-events: none;
-}
-
-.orb-a {
-  top: -10rem;
-  left: -8rem;
-  background: rgba(125, 211, 252, 0.4);
-}
-
-.orb-b {
-  bottom: -12rem;
-  right: -10rem;
-  background: rgba(245, 158, 11, 0.28);
+  display: none;
 }
 
 .shell {
@@ -96,10 +75,10 @@ h1 {
 .hero-card,
 .panel,
 .card {
-  background: var(--panel);
+  background: #202020;
   border: 1px solid var(--line);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(14px);
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .hero-card {
@@ -255,9 +234,9 @@ h1 {
 
 .table-limit select {
   appearance: none;
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
-  background: rgba(9, 15, 27, 0.9);
+  background: #202020;
   color: var(--text);
   padding: 10px 12px;
   font: inherit;
@@ -289,9 +268,9 @@ h1 {
 
 .trend-controls select {
   appearance: none;
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
-  background: rgba(9, 15, 27, 0.9);
+  background: #202020;
   color: var(--text);
   padding: 12px 14px;
   font: inherit;
@@ -301,6 +280,7 @@ h1 {
   overflow: auto;
   border-radius: 16px;
   border: 1px solid var(--line);
+  background: #202020;
 }
 
 table {
@@ -318,7 +298,7 @@ th, td {
 th {
   position: sticky;
   top: 0;
-  background: rgba(8, 16, 28, 0.96);
+  background: #202020;
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -362,8 +342,8 @@ tbody tr:hover {
 .chart-shell {
   position: relative;
   border-radius: 20px;
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  background: rgba(8, 16, 28, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #202020;
   overflow: hidden;
 }
 
@@ -404,8 +384,8 @@ tbody tr:hover {
 .trend-latest-card {
   padding: 14px 16px;
   border-radius: 18px;
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  background: rgba(9, 15, 27, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #202020;
 }
 
 .trend-latest-card span {
@@ -422,7 +402,7 @@ tbody tr:hover {
 }
 
 .trend-placeholder {
-  border: 1px dashed rgba(148, 163, 184, 0.22);
+  border: 1px dashed rgba(255, 255, 255, 0.18);
   border-radius: 18px;
   padding: 24px;
   color: var(--muted);
@@ -438,10 +418,10 @@ tbody tr:hover {
   max-width: 260px;
   padding: 12px 14px;
   border-radius: 14px;
-  background: rgba(5, 11, 20, 0.96);
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(12px);
+  background: #202020;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: none;
+  backdrop-filter: none;
   opacity: 0;
   transition: opacity 0.12s ease;
   pointer-events: none;
