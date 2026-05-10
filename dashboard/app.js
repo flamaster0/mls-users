@@ -97,6 +97,24 @@ function renderCards(metrics) {
   }
 }
 
+function renderImportBreakdown(metrics) {
+  const cards = document.querySelectorAll('#import-breakdown .card strong');
+  const breakdown = metrics?.import_breakdown ?? {};
+  const values = [
+    breakdown.manual,
+    breakdown.total,
+    breakdown.asari,
+    breakdown.esti,
+    breakdown.other,
+  ];
+
+  values.forEach((value, index) => {
+    if (cards[index]) {
+      cards[index].textContent = formatNumber(value);
+    }
+  });
+}
+
 function renderTopAgencies(metrics) {
   const tbody = document.getElementById('top-agencies');
   const meta = document.getElementById('top-agencies-meta');
@@ -523,6 +541,7 @@ function attachFilterHandlers(metrics) {
 
 const metrics = (await loadMetrics()) ?? fallbackMetrics;
 renderCards(metrics);
+renderImportBreakdown(metrics);
 renderTopAgencies(metrics);
 attachTableSortHandlers(metrics);
 attachTableLimitHandler(metrics);

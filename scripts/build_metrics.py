@@ -52,7 +52,17 @@ def build_biura_metrics():
         return [r.get(name) for r in rows]
 
     active_offers = sum(to_int(v) or 0 for v in field("Oferty: aktywne (3)"))
-    imported_agencies = sum(1 for v in field("Czy import ofert") if clean_text(v).lower() == "tak")
+    import_flags = [clean_text(v).lower() for v in field("Czy import ofert")]
+    import_sources = [clean_text(v) for v in field("Źródła importu")]
+    imported_agencies = sum(1 for v in import_flags if v == "tak")
+    manual_agencies = sum(1 for v in import_flags if v != "tak")
+    asari_agencies = sum(1 for source in import_sources if "asari" in source.lower())
+    esti_agencies = sum(1 for source in import_sources if "esticrm" in source.lower())
+    other_agencies = sum(
+        1
+        for source in import_sources
+        if source and "asari" not in source.lower() and "esticrm" not in source.lower()
+    )
 
     top = sorted(
         rows,
@@ -76,6 +86,10 @@ def build_biura_metrics():
         "biura": len(rows),
         "active_offers": active_offers,
         "imported_agencies": imported_agencies,
+        "manual_agencies": manual_agencies,
+        "asari_agencies": asari_agencies,
+        "esti_agencies": esti_agencies,
+        "other_agencies": other_agencies,
         "top_agencies": top_agencies,
     }
 
@@ -153,13 +167,20 @@ def main() -> None:
             {"label": "Biura", "value": biura["biura"]},
             {"label": "Użytkownicy", "value": latest_stats["users"]},
             {"label": "Aktywne oferty", "value": biura["active_offers"]},
-            {"label": "Biura z importem", "value": biura["imported_agencies"]},
+            {"label": "Tylko w MLS", "value": latest_stats["only_mls"]},
         ],
         "summary": {
             "latest_user_snapshot": latest_date,
             "latest_user_offers": latest_stats["offers"],
             "latest_user_active": latest_stats["active"],
             "latest_user_only_mls": latest_stats["only_mls"],
+        },
+        "import_breakdown": {
+            "manual": biura["manual_agencies"],
+            "total": biura["imported_agencies"],
+            "asari": biura["asari_agencies"],
+            "esti": biura["esti_agencies"],
+            "other": biura["other_agencies"],
         },
         "top_agencies": biura["top_agencies"],
         "trend_rows": trend_rows,

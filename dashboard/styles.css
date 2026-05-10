@@ -116,6 +116,10 @@ h1 {
   margin-bottom: 20px;
 }
 
+.cards-secondary {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
 .section-meta {
   display: flex;
   align-items: baseline;
@@ -465,6 +469,10 @@ tbody tr:hover {
   .hero,
   .grid,
   .cards {
+    grid-template-columns: 1fr;
+  }
+
+  .cards-secondary {
     grid-template-columns: 1fr;
   }
 
