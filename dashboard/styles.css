@@ -301,6 +301,20 @@ tbody tr:hover {
   margin-top: 0;
 }
 
+.trend-breakdown-latest {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.trend-breakdown-latest-grid {
+  display: contents;
+}
+
+.trend-breakdown-latest-grid .trend-latest-card {
+  margin-top: 0;
+}
+
 .trend-latest-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
