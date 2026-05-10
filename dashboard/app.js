@@ -720,7 +720,7 @@ function renderTrendCharts(metrics) {
       subtitleId: 'trend-only-mls-subtitle',
       minValue: 400,
       maxValue: 1000,
-      yTickStep: 50,
+      yTickStep: 100,
     },
   );
 }
