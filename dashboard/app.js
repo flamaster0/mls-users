@@ -583,6 +583,87 @@ function renderSingleChart(series, config) {
   latestBox.textContent = formatNumber(series[series.length - 1][config.key]);
 }
 
+function renderMultiSeriesChart(series, config) {
+  const chart = document.getElementById(config.svgId);
+  const latestBox = document.getElementById(config.latestId);
+  const subtitle = document.getElementById(config.subtitleId);
+  if (!chart || !latestBox || !subtitle) return;
+
+  if (series.length === 0) {
+    chart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
+    latestBox.innerHTML = '';
+    subtitle.textContent = 'Snapshoty tygodniowe';
+    return;
+  }
+
+  const width = 1120;
+  const height = 280;
+  const margin = { top: 18, right: 22, bottom: 48, left: 54 };
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
+
+  const values = series.flatMap((row) => config.seriesDefs.map((seriesDef) => row[seriesDef.key] ?? 0));
+  const bounds = getAxisBounds(values, { minValue: config.minValue, maxValue: config.maxValue }, config.yTickStep ?? 50);
+  const minValue = bounds.minValue;
+  const maxValue = bounds.maxValue;
+  const xForIndex = (index) => margin.left + (series.length === 1 ? innerWidth / 2 : (index / (series.length - 1)) * innerWidth);
+  const range = Math.max(1, maxValue - minValue);
+  const yForValue = (value) => margin.top + innerHeight - ((value - minValue) / range) * innerHeight;
+
+  const grid = [];
+  const gridStep = config.gridStep ?? config.yTickStep ?? 500;
+  const start = Math.ceil(maxValue / gridStep) * gridStep;
+  for (let value = start; value >= minValue; value -= gridStep) {
+    const ratio = (value - minValue) / range;
+    const y = margin.top + innerHeight - ratio * innerHeight;
+    grid.push(`
+      <g>
+        <line x1="${margin.left}" x2="${width - margin.right}" y1="${y}" y2="${y}" stroke="rgba(148, 163, 184, 0.14)" />
+        <text x="${margin.left - 10}" y="${y + 4}" text-anchor="end" fill="#9fb0c7" font-size="12">${formatNumber(value)}</text>
+      </g>
+    `);
+  }
+
+  const xLabels = series.map((row, index) => {
+    const prev = series[index - 1];
+    const isFirstOfMonth = !prev || row.date.slice(0, 7) !== prev.date.slice(0, 7);
+    if (!isFirstOfMonth) return '';
+    const x = xForIndex(index);
+    const isFirstOfYear = row.date.slice(5, 7) === '01';
+    const monthLabel = escapeHtml(formatMonthLabel(row.date));
+    const yearLabel = isFirstOfYear ? escapeHtml(formatYearLabel(row.date)) : '';
+    return `
+      <text x="${x}" y="${height - 16}" text-anchor="middle" fill="#9fb0c7" font-size="12">
+        <tspan x="${x}" dy="0">${monthLabel}</tspan>
+        ${isFirstOfYear ? `<tspan x="${x}" dy="14" font-size="10" fill="#7f93ab">${yearLabel}</tspan>` : ''}
+      </text>
+    `;
+  });
+
+  const linesMarkup = config.seriesDefs
+    .map((seriesDef) => {
+      const points = series.map((row, index) => ({ x: xForIndex(index), y: yForValue(row[seriesDef.key] ?? 0) }));
+      const last = points[points.length - 1];
+      return `
+        <path d="${pathFromPoints(points)}" fill="none" stroke="${seriesDef.color}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
+        <circle cx="${last.x}" cy="${last.y}" r="4.5" fill="${seriesDef.color}" stroke="rgba(7, 17, 31, 0.9)" stroke-width="2" />
+      `;
+    })
+    .join('');
+
+  chart.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  chart.innerHTML = `
+    ${grid.join('')}
+    ${linesMarkup}
+    ${xLabels.join('')}
+    <g class="chart-hover-layer"></g>
+  `;
+
+  setChartTooltip(chart, series, { label: config.tooltipLabel ?? config.label ?? 'Wartość' }, config.seriesDefs, width, height, margin);
+  subtitle.textContent = `${series.length} snapshotów`;
+  latestBox.innerHTML = config.latestRenderer(series[series.length - 1], series);
+}
+
 function renderTrendCharts(metrics) {
   const title = document.getElementById('trend-title');
   const subtitle = document.getElementById('trend-subtitle');
@@ -607,7 +688,10 @@ function renderTrendCharts(metrics) {
   const onlyMlsChart = document.getElementById('trend-only-mls-chart');
   const onlyMlsLatest = document.getElementById('trend-only-mls-latest');
   const onlyMlsSubtitle = document.getElementById('trend-only-mls-subtitle');
-  if (!breakdownChart || !breakdownLatest || !breakdownSubtitle || !searchesChart || !searchesLatest || !searchesSubtitle || !onlyMlsChart || !onlyMlsLatest || !onlyMlsSubtitle) return;
+  const importSourcesChart = document.getElementById('trend-import-sources-chart');
+  const importSourcesLatest = document.getElementById('trend-import-sources-latest');
+  const importSourcesSubtitle = document.getElementById('trend-import-sources-subtitle');
+  if (!breakdownChart || !breakdownLatest || !breakdownSubtitle || !searchesChart || !searchesLatest || !searchesSubtitle || !onlyMlsChart || !onlyMlsLatest || !onlyMlsSubtitle || !importSourcesChart || !importSourcesLatest || !importSourcesSubtitle) return;
 
   if (series.length === 0) {
     breakdownChart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
@@ -619,6 +703,9 @@ function renderTrendCharts(metrics) {
     onlyMlsChart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
     onlyMlsLatest.textContent = '--';
     onlyMlsSubtitle.textContent = 'Snapshoty tygodniowe';
+    importSourcesChart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
+    importSourcesLatest.innerHTML = '';
+    importSourcesSubtitle.textContent = 'Snapshoty tygodniowe';
     return;
   }
 
@@ -722,6 +809,36 @@ function renderTrendCharts(metrics) {
       minValue: 400,
       maxValue: 1000,
       yTickStep: 100,
+    },
+  );
+
+  renderMultiSeriesChart(
+    series,
+    {
+      label: 'Importy Asari / EstiCRM',
+      svgId: 'trend-import-sources-chart',
+      latestId: 'trend-import-sources-latest',
+      subtitleId: 'trend-import-sources-subtitle',
+      seriesDefs: [
+        { key: 'asari_imports', label: 'Asari', color: '#60BCB2' },
+        { key: 'esti_imports', label: 'EstiCRM', color: '#5D9F4F' },
+      ],
+      tooltipLabel: 'Importy',
+      minValue: 0,
+      yTickStep: 500,
+      gridStep: 500,
+      latestRenderer: (latest) => `
+        <div class="trend-breakdown-latest-grid">
+          <div class="trend-latest-card">
+            <span>Asari</span>
+            <strong>${formatNumber(latest.asari_imports)}</strong>
+          </div>
+          <div class="trend-latest-card">
+            <span>EstiCRM</span>
+            <strong>${formatNumber(latest.esti_imports)}</strong>
+          </div>
+        </div>
+      `,
     },
   );
 }

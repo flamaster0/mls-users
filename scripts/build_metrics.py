@@ -120,6 +120,8 @@ def build_user_trends():
                     "only_mls": to_int(row.get("only_mls")) or 0,
                     "active": to_int(row.get("active")) or 0,
                     "blocked": to_int(row.get("blocked")) or 0,
+                    "asari_imports": to_int(row.get("offer_from_Asari")) or 0,
+                    "esti_imports": to_int(row.get("offer_from_EstiCRM")) or 0,
                 }
             )
 
