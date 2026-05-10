@@ -375,6 +375,32 @@ function ensureChartTooltip(chart) {
   return tooltip;
 }
 
+function ensureHoverLayer(chart, lineCount) {
+  let layer = chart.querySelector('.chart-hover-layer');
+  if (!layer) {
+    layer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    layer.setAttribute('class', 'chart-hover-layer');
+    chart.appendChild(layer);
+  }
+
+  while (layer.childNodes.length < lineCount) {
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('class', 'chart-hover-line');
+    line.setAttribute('stroke-linecap', 'round');
+    line.setAttribute('stroke-width', '1.4');
+    line.setAttribute('stroke-dasharray', '6 6');
+    line.setAttribute('opacity', '0');
+    line.setAttribute('pointer-events', 'none');
+    layer.appendChild(line);
+  }
+
+  while (layer.childNodes.length > lineCount) {
+    layer.removeChild(layer.lastChild);
+  }
+
+  return Array.from(layer.querySelectorAll('.chart-hover-line'));
+}
+
 function setChartTooltip(chart, series, config, seriesDefs, width, height, margin) {
   const tooltip = ensureChartTooltip(chart);
   if (!tooltip || !series.length) return;
@@ -394,6 +420,7 @@ function setChartTooltip(chart, series, config, seriesDefs, width, height, margi
       };
     }),
   );
+  const hoverLines = ensureHoverLayer(chart, seriesDefs.length);
 
   const updateTooltip = (event) => {
     const rect = chart.getBoundingClientRect();
@@ -418,6 +445,16 @@ function setChartTooltip(chart, series, config, seriesDefs, width, height, margi
         `;
       })
       .join('');
+
+    hoverLines.forEach((line, seriesIndex) => {
+      const point = pointsBySeries[seriesIndex][index];
+      line.setAttribute('x1', margin.left);
+      line.setAttribute('x2', width - margin.right);
+      line.setAttribute('y1', point.y);
+      line.setAttribute('y2', point.y);
+      line.setAttribute('stroke', seriesDefs[seriesIndex].color);
+      line.setAttribute('opacity', '0.45');
+    });
 
     tooltip.innerHTML = `
       <div class="chart-tooltip-date">${escapeHtml(row.date)}</div>
@@ -447,6 +484,9 @@ function setChartTooltip(chart, series, config, seriesDefs, width, height, margi
   chart.onpointerenter = updateTooltip;
   chart.onpointerleave = () => {
     tooltip.style.opacity = '0';
+    hoverLines.forEach((line) => {
+      line.setAttribute('opacity', '0');
+    });
   };
 }
 
@@ -533,6 +573,9 @@ function renderSingleChart(series, config) {
     <path d="${path}" fill="none" stroke="${config.color}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" />
     <circle cx="${last.x}" cy="${last.y}" r="4.5" fill="${config.color}" stroke="rgba(7, 17, 31, 0.9)" stroke-width="2" />
     ${xLabels.join('')}
+    <g class="chart-hover-layer">
+      <line class="chart-hover-line" x1="${margin.left}" x2="${width - margin.right}" y1="${last.y}" y2="${last.y}" stroke="${config.color}" stroke-linecap="round" stroke-width="1.4" stroke-dasharray="6 6" opacity="0" pointer-events="none" />
+    </g>
   `;
 
   setChartTooltip(chart, series, config, [config], width, height, margin);

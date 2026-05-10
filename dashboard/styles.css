@@ -373,6 +373,10 @@ tbody tr:hover {
   display: block;
 }
 
+.chart-hover-line {
+  transition: opacity 0.12s ease;
+}
+
 .trend-latest {
   margin-top: 16px;
 }
