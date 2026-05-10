@@ -1,11 +1,21 @@
 async function loadMetrics() {
-  try {
-    const response = await fetch('/data/processed/dashboard.json', { cache: 'no-store' });
-    if (!response.ok) return null;
-    return await response.json();
-  } catch {
-    return null;
+  const candidateUrls = [
+    './dashboard.json',
+    '/data/processed/dashboard.json',
+    '../data/processed/dashboard.json',
+  ];
+
+  for (const url of candidateUrls) {
+    try {
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) continue;
+      return await response.json();
+    } catch {
+      // Try the next location.
+    }
   }
+
+  return null;
 }
 
 const fallbackMetrics = {

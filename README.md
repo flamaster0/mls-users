@@ -44,3 +44,28 @@ Po uruchomieniu dashboard będzie dostępny na porcie `8080`, a przeglądarka po
 - wystaw ten serwer za reverse proxy lub tunelem HTTPS
 - trzymaj login i hasło poza repo, jako zmienne środowiskowe
 - jeśli chcesz, mogę też przygotować wariant pod Docker albo pod konkretny hosting z panelem logowania
+
+## Publikacja `mls20`
+
+Nowy moduł można publikować do osobnego katalogu:
+
+- `https://remonitoring.pl/mls20/`
+- `https://remonitoring.pl/mls20/index.html`
+- `https://remonitoring.pl/mls20/dashboard.json`
+
+Bundle buduje się tak:
+
+```bash
+python3 scripts/publish_mls20.py
+```
+
+Jeśli chcesz od razu wysłać pliki na Zenbox, ustaw zmienne środowiskowe:
+
+```bash
+export ZENBOX_FTP_HOST="s7.zenbox.pl"
+export ZENBOX_FTP_USER="ftp@remonitoring.pl"
+export ZENBOX_FTP_PASSWORD="twoje_haslo_ftp"
+python3 scripts/publish_mls20.py --upload
+```
+
+Skrypt publikuje wyłącznie do `/mls20/` i nie dotyka roota domeny.

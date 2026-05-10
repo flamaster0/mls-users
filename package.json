@@ -8,6 +8,8 @@
     "build:data": "python3 scripts/build_metrics.py",
     "import": "python3 scripts/import_xls.py",
     "preview": "python3 -m http.server 4173 -d .",
-    "serve:private": "python3 scripts/serve_private.py"
+    "serve:private": "python3 scripts/serve_private.py",
+    "build:mls20": "python3 scripts/publish_mls20.py",
+    "publish:mls20": "python3 scripts/publish_mls20.py --upload"
   }
 }
