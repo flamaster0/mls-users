@@ -12,6 +12,29 @@ import xlrd
 ROOT = Path(__file__).resolve().parents[1]
 PROCESSED_DIR = ROOT / "data" / "processed"
 
+CITY_CANONICAL_ALIASES = [
+    ("Warszawa", ["Warszawa", "Warsaw"]),
+    ("Kraków", ["Krakow", "Kraków"]),
+    ("Łódź", ["Lodz", "Łodz", "Łódź"]),
+    ("Wrocław", ["Wroclaw", "Wrocław"]),
+    ("Poznań", ["Poznan", "Poznań"]),
+    ("Gdańsk", ["Gdansk", "Gdańsk"]),
+    ("Szczecin", ["Szczecin"]),
+    ("Bydgoszcz", ["Bydgoszcz"]),
+    ("Lublin", ["Lublin"]),
+    ("Białystok", ["Bialystok", "Białystok"]),
+    ("Katowice", ["Katowice"]),
+    ("Rzeszów", ["Rzeszow", "Rzeszów"]),
+    ("Olsztyn", ["Olsztyn"]),
+    ("Toruń", ["Torun", "Toruń"]),
+    ("Opole", ["Opole"]),
+    ("Kielce", ["Kielce"]),
+    ("Zielona Góra", ["Zielona Gora", "Zielona Góra"]),
+    ("Gorzów Wielkopolski", ["Gorzow Wielkopolski", "Gorzów Wielkopolski"]),
+    ("Bielsko-Biała", ["Bielsko Biala", "Bielsko-Biała"]),
+    ("Częstochowa", ["Czestochowa", "Częstochowa"]),
+]
+
 
 def clean_text(value) -> str:
     return str(value).strip() if value is not None else ""
@@ -25,6 +48,19 @@ def normalize_city_name(value) -> str:
     normalized = unicodedata.normalize("NFKD", text)
     without_marks = "".join(ch for ch in normalized if not unicodedata.combining(ch))
     compact = re.sub(r"\s+", " ", without_marks).strip()
+
+    lowered = compact.lower()
+    matches = []
+    for canonical, aliases in CITY_CANONICAL_ALIASES:
+        for alias in aliases:
+            pattern = re.compile(rf"(?<!\w){re.escape(alias.lower())}(?!\w)")
+            for match in pattern.finditer(lowered):
+                matches.append((match.start(), match.end() - match.start(), canonical))
+
+    if matches:
+        matches.sort(key=lambda item: (item[0], -item[1]))
+        return matches[-1][2]
+
     return compact.title()
 
 
