@@ -109,10 +109,9 @@ function getAdaptiveTickStep(values, fallbackStep = 50) {
   const dataMin = Math.min(...values);
   const dataMax = Math.max(...values);
   const visibleRange = Math.max(1, dataMax - dataMin);
-  const rawStep = visibleRange / 5;
-  const preferredBase = fallbackStep > 0 ? fallbackStep : 50;
-  const candidate = Math.max(10, Math.round(rawStep / 10) * 10);
-  return Math.max(10, Math.min(preferredBase, candidate));
+  if (visibleRange >= 2500 || dataMax >= 5000) return 500;
+  if (visibleRange >= 600 || dataMax >= 1200) return 100;
+  return 50;
 }
 
 function compareValues(a, b, key) {
@@ -579,9 +578,9 @@ function renderSingleChart(series, config) {
   const yForValue = (value) => margin.top + innerHeight - ((value - minValue) / range) * innerHeight;
 
   const grid = [];
-  const tickStep = shouldAutoScaleTrend()
-    ? getAdaptiveTickStep(values, config.yTickStep ?? 50)
-    : (config.yTickStep ?? null);
+  const tickStep = config.yTickStep != null
+    ? (shouldAutoScaleTrend() ? getAdaptiveTickStep(values, config.yTickStep) : config.yTickStep)
+    : getAdaptiveTickStep(values, 50);
   if (tickStep) {
     const start = Math.ceil(maxValue / tickStep) * tickStep;
     for (let value = start; value >= minValue; value -= tickStep) {
@@ -824,7 +823,8 @@ function renderTrendCharts(metrics) {
   const yForValue = (value) => margin.top + innerHeight - ((value - minValue) / range) * innerHeight;
 
   const grid = [];
-  for (let value = Math.ceil(maxValue / 500) * 500; value >= minValue; value -= 500) {
+  const breakdownStep = shouldAutoScaleTrend() ? getAdaptiveTickStep(values, 100) : 100;
+  for (let value = Math.ceil(maxValue / breakdownStep) * breakdownStep; value >= minValue; value -= breakdownStep) {
     const ratio = (value - minValue) / range;
     const y = margin.top + innerHeight - ratio * innerHeight;
     grid.push(`
@@ -893,7 +893,6 @@ function renderTrendCharts(metrics) {
       svgId: 'trend-searches-chart',
       latestId: 'trend-searches-latest',
       subtitleId: 'trend-searches-subtitle',
-      yTickStep: 1000,
     },
   );
 
@@ -925,8 +924,8 @@ function renderTrendCharts(metrics) {
       ],
       tooltipLabel: 'Agencje',
       minValue: 0,
-      yTickStep: 25,
-      gridStep: 25,
+      yTickStep: 50,
+      gridStep: 50,
       latestRenderer: (latest) => `
         <div class="trend-breakdown-latest-grid">
           <div class="trend-latest-card">
