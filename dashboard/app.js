@@ -75,6 +75,33 @@ function formatYearLabel(value) {
   return new Intl.DateTimeFormat('pl-PL', { year: 'numeric' }).format(date);
 }
 
+function shouldAutoScaleTrend() {
+  return state.region !== 'ALL' || state.city !== 'ALL' || state.yearFrom !== 'ALL' || state.yearTo !== 'ALL';
+}
+
+function getAxisBounds(values, config, step = 50) {
+  const dataMin = Math.min(...values);
+  const dataMax = Math.max(...values);
+  const autoScale = shouldAutoScaleTrend();
+
+  if (autoScale) {
+    let minValue = Math.floor(dataMin / step) * step;
+    let maxValue = Math.ceil(dataMax / step) * step;
+    if (maxValue <= minValue) {
+      minValue -= step;
+      maxValue += step;
+    }
+    return { minValue, maxValue };
+  }
+
+  const minValue = config.minValue != null ? config.minValue : Math.floor(dataMin / step) * step;
+  const maxValue = config.maxValue != null ? config.maxValue : Math.ceil(dataMax / step) * step;
+  return {
+    minValue,
+    maxValue: maxValue <= minValue ? minValue + step : maxValue,
+  };
+}
+
 function compareValues(a, b, key) {
   if (key === 'name') {
     return a.name.localeCompare(b.name, 'pl', { sensitivity: 'base' });
@@ -439,8 +466,9 @@ function renderSingleChart(series, config) {
   const innerHeight = height - margin.top - margin.bottom;
 
   const dataMaxValue = Math.max(1, ...series.map((row) => row[config.key] ?? 0));
-  const minValue = Math.min(config.minValue ?? 0, dataMaxValue);
-  const maxValue = Math.max(dataMaxValue, config.maxValue ?? dataMaxValue);
+  const bounds = getAxisBounds([...(series.map((row) => row[config.key] ?? 0)), dataMaxValue], config, config.yTickStep ?? 50);
+  const minValue = bounds.minValue;
+  const maxValue = bounds.maxValue;
   const xForIndex = (index) => margin.left + (series.length === 1 ? innerWidth / 2 : (index / (series.length - 1)) * innerWidth);
   const range = Math.max(1, maxValue - minValue);
   const yForValue = (value) => margin.top + innerHeight - ((value - minValue) / range) * innerHeight;
@@ -548,8 +576,9 @@ function renderTrendCharts(metrics) {
   const innerHeight = height - margin.top - margin.bottom;
 
   const values = series.flatMap((row) => breakdownSeriesConfig.map((config) => row[config.key] ?? 0));
-  const minValue = 5000;
-  const maxValue = Math.max(9000, ...values);
+  const bounds = getAxisBounds(values, { minValue: 5000, maxValue: 9000 }, 50);
+  const minValue = bounds.minValue;
+  const maxValue = bounds.maxValue;
   const xForIndex = (index) => margin.left + (series.length === 1 ? innerWidth / 2 : (index / (series.length - 1)) * innerWidth);
   const range = Math.max(1, maxValue - minValue);
   const yForValue = (value) => margin.top + innerHeight - ((value - minValue) / range) * innerHeight;
