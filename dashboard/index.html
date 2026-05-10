@@ -130,7 +130,18 @@
         <section class="panel panel-wide">
           <div class="panel-head">
             <h2>Top agencje</h2>
-            <p>Ranking po aktywnych ofertach</p>
+            <div class="table-toolbar">
+              <p id="top-agencies-meta">Ranking po aktywnych ofertach</p>
+              <label class="table-limit">
+                <span>Widok</span>
+                <select id="top-agencies-limit">
+                  <option value="10" selected>10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </label>
+            </div>
           </div>
           <div class="table-shell">
             <table>

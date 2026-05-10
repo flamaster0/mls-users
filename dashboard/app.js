@@ -39,6 +39,7 @@ const state = {
   city: 'ALL',
   sortKey: 'active_offers',
   sortDirection: 'desc',
+  topAgenciesLimit: 10,
 };
 
 function escapeHtml(value) {
@@ -98,6 +99,7 @@ function renderCards(metrics) {
 
 function renderTopAgencies(metrics) {
   const tbody = document.getElementById('top-agencies');
+  const meta = document.getElementById('top-agencies-meta');
   const headerButtons = document.querySelectorAll('[data-sort-key]');
   const sortLabels = {
     name: 'Agencja',
@@ -121,7 +123,14 @@ function renderTopAgencies(metrics) {
     return;
   }
 
-  tbody.innerHTML = getSortedTopAgencies(metrics)
+  const rows = getSortedTopAgencies(metrics);
+  const visibleRows = rows.slice(0, state.topAgenciesLimit);
+
+  if (meta) {
+    meta.textContent = `Pokazuję ${visibleRows.length} z ${rows.length} biur`;
+  }
+
+  tbody.innerHTML = visibleRows
     .map(
       (row) => `
         <tr>
@@ -150,6 +159,17 @@ function attachTableSortHandlers(metrics) {
 
       renderTopAgencies(metrics);
     });
+  });
+}
+
+function attachTableLimitHandler(metrics) {
+  const limitSelect = document.getElementById('top-agencies-limit');
+  if (!limitSelect) return;
+
+  limitSelect.value = String(state.topAgenciesLimit);
+  limitSelect.addEventListener('change', () => {
+    state.topAgenciesLimit = Number(limitSelect.value) || 10;
+    renderTopAgencies(metrics);
   });
 }
 
@@ -505,6 +525,7 @@ const metrics = (await loadMetrics()) ?? fallbackMetrics;
 renderCards(metrics);
 renderTopAgencies(metrics);
 attachTableSortHandlers(metrics);
+attachTableLimitHandler(metrics);
 populateFilters(metrics);
 attachFilterHandlers(metrics);
 renderTrendCharts(metrics);
