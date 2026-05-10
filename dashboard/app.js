@@ -36,7 +36,7 @@ const fallbackMetrics = {
 
 const chartConfigs = [
   { key: 'offices', label: 'Liczba biur', color: '#7dd3fc', svgId: 'trend-offices-chart', latestId: 'trend-offices-latest', subtitleId: 'trend-office-subtitle', minValue: 400, maxValue: 700, yTickStep: 50 },
-  { key: 'agents', label: 'Liczba agentów', color: '#f59e0b', svgId: 'trend-agents-chart', latestId: 'trend-agents-latest', subtitleId: 'trend-agents-subtitle', minValue: 3000, maxValue: 5000, yTickStep: 100 },
+  { key: 'agents', label: 'Liczba agentów', color: '#f59e0b', svgId: 'trend-agents-chart', latestId: 'trend-agents-latest', subtitleId: 'trend-agents-subtitle', minValue: 3000, maxValue: 5000, yTickStep: 500 },
   { key: 'searches', label: 'Poszukiwania', color: '#8b8dd9', svgId: 'trend-searches-chart', latestId: 'trend-searches-latest', subtitleId: 'trend-searches-subtitle', zeroAsGap: true, hideWhenAllZero: true },
   { key: 'suspended', label: 'Oferty suspended', color: '#fb7185', svgId: 'trend-suspended-chart', latestId: 'trend-suspended-latest', subtitleId: 'trend-suspended-subtitle', minValue: 600, maxValue: 1200, yTickStep: 100, zeroAsGap: true, hideWhenAllZero: true },
 ];
