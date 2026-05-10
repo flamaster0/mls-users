@@ -34,6 +34,8 @@ const fallbackMetrics = {
   },
 };
 
+const OFFER_BREAKDOWN_START_YEAR = 2022;
+
 const chartConfigs = [
   { key: 'offices', label: 'Liczba biur', color: '#7dd3fc', svgId: 'trend-offices-chart', latestId: 'trend-offices-latest', subtitleId: 'trend-office-subtitle', minValue: 400, maxValue: 700, yTickStep: 50 },
   { key: 'agents', label: 'Liczba agentów', color: '#f59e0b', svgId: 'trend-agents-chart', latestId: 'trend-agents-latest', subtitleId: 'trend-agents-subtitle', minValue: 3000, maxValue: 5000, yTickStep: 500 },
@@ -42,6 +44,7 @@ const chartConfigs = [
 ];
 
 const breakdownSeriesConfig = [
+  { key: 'offers', label: 'Liczba ofert', color: '#9fb0c7' },
   { key: 'onlyMlsActive', label: 'Tylko w MLS + aktywne', color: '#356B31' },
   { key: 'active', label: 'Aktywne', color: '#5D9F4F' },
 ];
@@ -556,11 +559,13 @@ function setChartTooltip(chart, series, config, seriesDefs, width, height, margi
 
   const pointsBySeries = seriesDefs.map((seriesDef, seriesIndex) =>
     series.map((row, index) => {
-      const yForValue = (value) => margin.top + innerHeight - ((value - 0) / (maxValues[seriesIndex] - 0)) * innerHeight;
+      const value = Number(row[seriesDef.key]) || 0;
+      const isGap = Boolean(config.zeroAsGap && value === 0) || Boolean(config.gapBeforeYear && Number(String(row.date).slice(0, 4)) < config.gapBeforeYear && seriesDef.key !== 'offers');
+      const yForValue = (rawValue) => margin.top + innerHeight - ((rawValue - 0) / (maxValues[seriesIndex] - 0)) * innerHeight;
       return {
         x: xForIndex(index),
-        y: yForValue(row[seriesDef.key] ?? 0),
-        value: row[seriesDef.key] ?? 0,
+        y: isGap ? null : yForValue(value),
+        value: isGap ? null : value,
       };
     }),
   );
@@ -584,7 +589,7 @@ function setChartTooltip(chart, series, config, seriesDefs, width, height, margi
           <div class="chart-tooltip-row">
             <span class="chart-tooltip-swatch" style="background:${seriesDef.color}"></span>
             <span class="chart-tooltip-label">${escapeHtml(seriesDef.label)}:</span>
-            <strong>${formatNumber(point.value)}</strong>
+            <strong>${point.value == null ? '—' : formatNumber(point.value)}</strong>
           </div>
         `;
       })
@@ -592,6 +597,10 @@ function setChartTooltip(chart, series, config, seriesDefs, width, height, margi
 
     hoverLines.forEach((line, seriesIndex) => {
       const point = pointsBySeries[seriesIndex][index];
+      if (!point || point.y == null) {
+        line.setAttribute('opacity', '0');
+        return;
+      }
       line.setAttribute('x1', margin.left);
       line.setAttribute('x2', width - margin.right);
       line.setAttribute('y1', point.y);
@@ -609,7 +618,7 @@ function setChartTooltip(chart, series, config, seriesDefs, width, height, margi
     const tooltipWidth = 220;
     const tooltipHeight = 42 + seriesDefs.length * 28;
     let left = point.x * scaleX + 16;
-    let top = point.y * scaleY - 16;
+    let top = (point.y ?? margin.top) * scaleY - 16;
     const maxLeft = rect.width - tooltipWidth - 8;
     const maxTop = rect.height - tooltipHeight - 8;
 
@@ -920,6 +929,7 @@ function renderTrendCharts(metrics) {
   const breakdownChart = document.getElementById('trend-offers-breakdown-chart');
   const breakdownLatest = document.getElementById('trend-offers-breakdown-latest');
   const breakdownSubtitle = document.getElementById('trend-offers-breakdown-subtitle');
+  const breakdownNote = document.getElementById('trend-offers-breakdown-note');
   const searchesChart = document.getElementById('trend-searches-chart');
   const searchesLatest = document.getElementById('trend-searches-latest');
   const searchesSubtitle = document.getElementById('trend-searches-subtitle');
@@ -932,12 +942,13 @@ function renderTrendCharts(metrics) {
   const suspendedChart = document.getElementById('trend-suspended-chart');
   const suspendedLatest = document.getElementById('trend-suspended-latest');
   const suspendedSubtitle = document.getElementById('trend-suspended-subtitle');
-  if (!breakdownChart || !breakdownLatest || !breakdownSubtitle || !searchesChart || !searchesLatest || !searchesSubtitle || !onlyMlsChart || !onlyMlsLatest || !onlyMlsSubtitle || !importSourcesChart || !importSourcesLatest || !importSourcesSubtitle || !suspendedChart || !suspendedLatest || !suspendedSubtitle) return;
+  if (!breakdownChart || !breakdownLatest || !breakdownSubtitle || !breakdownNote || !searchesChart || !searchesLatest || !searchesSubtitle || !onlyMlsChart || !onlyMlsLatest || !onlyMlsSubtitle || !importSourcesChart || !importSourcesLatest || !importSourcesSubtitle || !suspendedChart || !suspendedLatest || !suspendedSubtitle) return;
 
   if (series.length === 0) {
     breakdownChart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
     breakdownLatest.innerHTML = '';
     breakdownSubtitle.textContent = `Liczba ofert - ${getScopeLabel()} • brak danych`;
+    breakdownNote.textContent = 'Brak danych dla tego filtra.';
     searchesChart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
     searchesLatest.textContent = '--';
     searchesSubtitle.textContent = `Poszukiwania - ${getScopeLabel()} • brak danych`;
@@ -959,8 +970,17 @@ function renderTrendCharts(metrics) {
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
-  const values = series.flatMap((row) => breakdownSeriesConfig.map((config) => row[config.key] ?? 0));
-  const bounds = getAxisBounds(values, { minValue: 5000, maxValue: 9000 }, 100);
+  const breakdownSeries = series.map((row) => {
+    const year = Number(String(row.date).slice(0, 4));
+    const breakdownVisible = year >= OFFER_BREAKDOWN_START_YEAR;
+    return {
+      ...row,
+      onlyMlsActive: breakdownVisible ? row.onlyMls + row.active : null,
+      active: breakdownVisible ? row.active : null,
+    };
+  });
+  const values = breakdownSeries.flatMap((row) => breakdownSeriesConfig.map((config) => Number(row[config.key]) || 0));
+  const bounds = getAxisBounds(values, { minValue: 0 }, 100);
   const minValue = bounds.minValue;
   const maxValue = bounds.maxValue;
   const xForIndex = (index) => margin.left + (series.length === 1 ? innerWidth / 2 : (index / (series.length - 1)) * innerWidth);
@@ -999,10 +1019,17 @@ function renderTrendCharts(metrics) {
 
   const seriesMarkup = breakdownSeriesConfig
     .map((config) => {
-      const points = series.map((row, index) => ({ x: xForIndex(index), y: yForValue(row[config.key] ?? 0) }));
+      const points = breakdownSeries.map((row, index) => {
+        const value = Number(row[config.key]);
+        if (config.key !== 'offers' && Number(String(row.date).slice(0, 4)) < OFFER_BREAKDOWN_START_YEAR) return null;
+        return { x: xForIndex(index), y: yForValue(value ?? 0), value };
+      });
+      const path = pathFromPoints(points, { allowGaps: true });
+      if (!path) return '';
+      const last = [...points].reverse().find((point) => point);
       return `
-        <path d="${pathFromPoints(points)}" fill="none" stroke="${config.color}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
-        <circle cx="${points[points.length - 1].x}" cy="${points[points.length - 1].y}" r="4.5" fill="${config.color}" stroke="rgba(7, 17, 31, 0.9)" stroke-width="2" />
+        <path d="${path}" fill="none" stroke="${config.color}" stroke-width="${config.key === 'offers' ? '3.4' : '3.2'}" stroke-linecap="round" stroke-linejoin="round" />
+        ${last ? `<circle cx="${last.x}" cy="${last.y}" r="4.5" fill="${config.color}" stroke="rgba(7, 17, 31, 0.9)" stroke-width="2" />` : ''}
       `;
     })
     .join('');
@@ -1013,8 +1040,9 @@ function renderTrendCharts(metrics) {
     ${seriesMarkup}
     ${xLabels.join('')}
   `;
-  setChartTooltip(breakdownChart, series, { label: 'Liczba ofert' }, breakdownSeriesConfig, width, height, margin);
+  setChartTooltip(breakdownChart, breakdownSeries, { label: 'Liczba ofert', gapBeforeYear: OFFER_BREAKDOWN_START_YEAR }, breakdownSeriesConfig, width, height, margin);
   breakdownSubtitle.textContent = `Liczba ofert - ${getScopeLabel()} • ${series.length} snapshotów`;
+  breakdownNote.textContent = `Rozbicie pokazujemy od ${OFFER_BREAKDOWN_START_YEAR}; wcześniejsze lata mają tylko łączną liczbę ofert.`;
   breakdownLatest.innerHTML = `
     <div class="trend-breakdown-latest-grid">
       ${breakdownSeriesConfig
@@ -1022,7 +1050,7 @@ function renderTrendCharts(metrics) {
           (config) => `
             <div class="trend-latest-card">
               <span>${config.label}</span>
-              <strong>${formatNumber(series[series.length - 1][config.key])}</strong>
+              <strong>${formatNumber(breakdownSeries[breakdownSeries.length - 1][config.key] ?? series[series.length - 1][config.key])}</strong>
             </div>
           `,
         )

@@ -435,6 +435,13 @@ tbody tr:hover {
   display: block;
 }
 
+.trend-chart-note {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
 .chart-legend {
   display: flex;
   flex-wrap: wrap;
