@@ -708,10 +708,31 @@ function renderMultiSeriesChart(series, config) {
   if (!chart || !latestBox || !subtitle) return;
   const legend = ensureChartLegend(chart);
 
+  const hasPositiveValues = series.some((row) =>
+    config.seriesDefs.some((seriesDef) => (Number(row[seriesDef.key]) || 0) > 0),
+  );
+
   if (series.length === 0) {
     chart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
     latestBox.innerHTML = '';
     subtitle.textContent = 'Snapshoty tygodniowe';
+    if (legend) {
+      legend.innerHTML = config.seriesDefs
+        .map((seriesDef) => `
+          <span class="chart-legend-item">
+            <span class="chart-legend-swatch" style="background:${seriesDef.color}"></span>
+            <span>${escapeHtml(seriesDef.label)}</span>
+          </span>
+        `)
+        .join('');
+    }
+    return;
+  }
+
+  if (config.hideWhenAllZero && !hasPositiveValues) {
+    chart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak importów dla tego filtra.</text>';
+    latestBox.innerHTML = '';
+    subtitle.textContent = `${config.label} - ${getScopeLabel()} • brak importów`;
     if (legend) {
       legend.innerHTML = config.seriesDefs
         .map((seriesDef) => `
@@ -976,6 +997,7 @@ function renderTrendCharts(metrics) {
       forceMinValue: 0,
       yTickStep: 50,
       gridStep: 50,
+      hideWhenAllZero: true,
       latestRenderer: (latest) => `
         <div class="trend-breakdown-latest-grid">
           <div class="trend-latest-card">
