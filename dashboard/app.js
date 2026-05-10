@@ -586,7 +586,7 @@ function renderTrendCharts(metrics) {
   const innerHeight = height - margin.top - margin.bottom;
 
   const values = series.flatMap((row) => breakdownSeriesConfig.map((config) => row[config.key] ?? 0));
-  const bounds = getAxisBounds(values, { minValue: 5000, maxValue: 9000 }, 50);
+  const bounds = getAxisBounds(values, { minValue: 5000, maxValue: 9000 }, 100);
   const minValue = bounds.minValue;
   const maxValue = bounds.maxValue;
   const xForIndex = (index) => margin.left + (series.length === 1 ? innerWidth / 2 : (index / (series.length - 1)) * innerWidth);
