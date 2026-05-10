@@ -95,11 +95,15 @@ function getAxisBounds(values, config, step = 50) {
   const dataMin = Math.min(...values);
   const dataMax = Math.max(...values);
   const autoScale = shouldAutoScaleTrend();
+  const forcedMinValue = config.forceMinValue;
 
   if (autoScale) {
     const padding = Math.max(step / 2, 10);
     let minValue = Math.floor((dataMin - padding) / step) * step;
     let maxValue = Math.ceil((dataMax + padding) / step) * step;
+    if (forcedMinValue != null) {
+      minValue = forcedMinValue;
+    }
     if (maxValue <= minValue) {
       minValue -= step;
       maxValue += step;
@@ -933,7 +937,7 @@ function renderTrendCharts(metrics) {
         { key: 'estiAgencies', label: 'EstiCRM', color: '#5D9F4F' },
       ],
       tooltipLabel: 'Agencje',
-      minValue: 0,
+      forceMinValue: 0,
       yTickStep: 50,
       gridStep: 50,
       latestRenderer: (latest) => `
