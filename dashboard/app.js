@@ -87,6 +87,38 @@ function formatYearLabel(value) {
   return new Intl.DateTimeFormat('pl-PL', { year: 'numeric' }).format(date);
 }
 
+function buildSemiannualGuideLines(series, xForIndex, height, margin) {
+  const targetMonths = new Set(['01', '07']);
+  const startY = margin.top;
+  const endY = height - margin.bottom;
+  const seen = new Set();
+  const guides = [];
+
+  series.forEach((row, index) => {
+    const prev = series[index - 1];
+    const isFirstOfMonth = !prev || row.date.slice(0, 7) !== prev.date.slice(0, 7);
+    if (!isFirstOfMonth) return;
+    const month = row.date.slice(5, 7);
+    const yearMonth = row.date.slice(0, 7);
+    if (!targetMonths.has(month) || seen.has(yearMonth)) return;
+    seen.add(yearMonth);
+    const x = xForIndex(index);
+    guides.push(`
+      <line
+        x1="${x}"
+        x2="${x}"
+        y1="${startY}"
+        y2="${endY}"
+        stroke="rgba(148, 163, 184, 0.14)"
+        stroke-width="1"
+        stroke-dasharray="4 6"
+      />
+    `);
+  });
+
+  return guides.join('');
+}
+
 function shouldAutoScaleTrend() {
   return state.region !== 'ALL' || state.city !== 'ALL' || state.yearFrom !== 'ALL' || state.yearTo !== 'ALL';
 }
@@ -638,6 +670,7 @@ function renderSingleChart(series, config) {
       </text>
     `;
   });
+  const guideLines = buildSemiannualGuideLines(series, xForIndex, height, margin);
 
   const points = series.map((row, index) => ({ x: xForIndex(index), y: yForValue(row[config.key] ?? 0) }));
   const path = pathFromPoints(points);
@@ -646,6 +679,7 @@ function renderSingleChart(series, config) {
   chart.setAttribute('viewBox', `0 0 ${width} ${height}`);
   chart.innerHTML = `
     ${grid.join('')}
+    ${guideLines}
     <path d="${path}" fill="none" stroke="${config.color}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" />
     <circle cx="${last.x}" cy="${last.y}" r="4.5" fill="${config.color}" stroke="rgba(7, 17, 31, 0.9)" stroke-width="2" />
     ${xLabels.join('')}
@@ -736,6 +770,7 @@ function renderMultiSeriesChart(series, config) {
       </text>
     `;
   });
+  const guideLines = buildSemiannualGuideLines(series, xForIndex, height, margin);
 
   const linesMarkup = config.seriesDefs
     .map((seriesDef) => {
@@ -751,6 +786,7 @@ function renderMultiSeriesChart(series, config) {
   chart.setAttribute('viewBox', `0 0 ${width} ${height}`);
   chart.innerHTML = `
     ${grid.join('')}
+    ${guideLines}
     ${linesMarkup}
     ${xLabels.join('')}
     <g class="chart-hover-layer"></g>
