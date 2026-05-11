@@ -11,11 +11,8 @@
     <div class="bg-orb orb-b"></div>
     <div id="page-loader" class="page-loader" role="status" aria-live="polite" aria-label="Ładowanie danych">
       <div class="page-loader-card">
+        <p>Ładowanie danych MLS</p>
         <div class="page-loader-spinner" aria-hidden="true"></div>
-        <div>
-          <p>Ładowanie danych MLS</p>
-          <span>To może potrwać chwilę przy dużym pliku JSON.</span>
-        </div>
       </div>
     </div>
     <main class="shell">
@@ -93,19 +90,6 @@
           <strong>--</strong>
           <p>Inne źródła importu</p>
         </article>
-      </section>
-
-      <section class="panel panel-wide status-panel">
-        <div class="panel-head">
-          <div>
-            <h2>Archive / transakcje</h2>
-            <p>Bieżący rozkład statusów ofert w snapshotcie biur.</p>
-          </div>
-          <p id="status-summary">--</p>
-        </div>
-        <div class="chart-shell status-chart-shell">
-          <svg id="offer-status-chart" class="trend-chart" viewBox="0 0 1120 360" role="img" aria-label="Wykres statusów ofert w biurach"></svg>
-        </div>
       </section>
 
       <section class="grid">
@@ -277,6 +261,19 @@
             </table>
           </div>
         </section>
+      </section>
+
+      <section class="panel panel-wide status-panel">
+        <div class="panel-head">
+          <div>
+            <h2>Archive / transakcje</h2>
+            <p>Bieżący rozkład statusów ofert w snapshotcie biur.</p>
+          </div>
+          <p id="status-summary">--</p>
+        </div>
+        <div class="chart-shell status-chart-shell">
+          <svg id="offer-status-chart" class="trend-chart" viewBox="0 0 1120 360" role="img" aria-label="Wykres statusów ofert w biurach"></svg>
+        </div>
       </section>
     </main>
 
