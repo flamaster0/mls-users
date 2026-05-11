@@ -17,6 +17,7 @@ ZENBOX_AUTH_FILE_DIR = os.environ.get(
     "../.htpasswd",
 )
 DEFAULT_USERNAME = "mls20"
+DEFAULT_PASSWORD = "t-gPe5KTMe7NUGqW-6vA"
 
 
 def copy_file(src: Path, dst: Path) -> None:
@@ -113,10 +114,10 @@ def main() -> None:
     parser.add_argument("--remote-dir", default="/mls20", help="Remote FTP directory. Defaults to /mls20.")
     parser.add_argument("--auth-dir", default=REMOTE_AUTH_DIR, help="Remote Zenbox auth directory for .htpasswd.")
     parser.add_argument("--username", default=DEFAULT_USERNAME, help="Basic Auth username. Defaults to mls20.")
-    parser.add_argument("--password", help="Basic Auth password. If omitted, a secure password is generated.")
+    parser.add_argument("--password", help="Basic Auth password. If omitted, the stable MLS20 password is used.")
     args = parser.parse_args()
 
-    password = args.password or generate_password()
+    password = args.password or os.environ.get("ZENBOX_MLS20_PASSWORD") or DEFAULT_PASSWORD
     dist_dir = build_bundle(args.username, password)
     print(f"Built bundle in {dist_dir}")
     print(f"Basic Auth user: {args.username}")
