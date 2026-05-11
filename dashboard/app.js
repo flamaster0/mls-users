@@ -60,6 +60,7 @@ const state = {
   city: 'ALL',
   yearFrom: 'ALL',
   yearTo: 'ALL',
+  topAgenciesRegion: 'ALL',
   sortKey: 'active_offers',
   sortDirection: 'desc',
   topAgenciesLimit: 10,
@@ -222,10 +223,13 @@ function compareValues(a, b, key) {
 
 function getSortedTopAgencies(metrics) {
   const rows = Array.isArray(metrics?.top_agencies) ? [...metrics.top_agencies] : [];
+  const filteredRows = state.topAgenciesRegion === 'ALL'
+    ? rows
+    : rows.filter((row) => row.province === state.topAgenciesRegion);
   const { sortKey, sortDirection } = state;
   const direction = sortDirection === 'asc' ? 1 : -1;
 
-  return rows.sort((a, b) => {
+  return filteredRows.sort((a, b) => {
     const primary = compareValues(a, b, sortKey);
     if (primary !== 0) return primary * direction;
     return a.name.localeCompare(b.name, 'pl', { sensitivity: 'base' });
@@ -332,6 +336,7 @@ function getTrendYears(metrics) {
 function renderTopAgencies(metrics) {
   const tbody = document.getElementById('top-agencies');
   const meta = document.getElementById('top-agencies-meta');
+  const regionSelect = document.getElementById('top-agencies-region');
   const headerButtons = document.querySelectorAll('[data-sort-key]');
   const sortLabels = {
     name: 'Agencja',
@@ -355,6 +360,17 @@ function renderTopAgencies(metrics) {
     return;
   }
 
+  if (regionSelect) {
+    const regions = Array.from(new Set(metrics.top_agencies.map((row) => row.province).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'pl', { sensitivity: 'base' }));
+    regionSelect.innerHTML = ['<option value="ALL">Wszystkie regiony</option>']
+      .concat(regions.map((region) => `<option value="${escapeHtml(region)}">${escapeHtml(region)}</option>`))
+      .join('');
+    if (!regions.includes(state.topAgenciesRegion)) {
+      state.topAgenciesRegion = 'ALL';
+    }
+    regionSelect.value = state.topAgenciesRegion;
+  }
+
   const rows = getSortedTopAgencies(metrics);
   const visibleRows = rows.slice(0, state.topAgenciesLimit);
 
@@ -364,6 +380,7 @@ function renderTopAgencies(metrics) {
       : '--';
     meta.innerHTML = `
       <span>Stan na ${escapeHtml(snapshotDate)}</span>
+      <span>Region: ${escapeHtml(state.topAgenciesRegion === 'ALL' ? 'wszystkie' : state.topAgenciesRegion)}</span>
       <span>Pokazuję ${visibleRows.length} z ${rows.length} biur</span>
     `;
   }
@@ -408,6 +425,17 @@ function attachTableLimitHandler(metrics) {
   limitSelect.value = String(state.topAgenciesLimit);
   limitSelect.addEventListener('change', () => {
     state.topAgenciesLimit = Number(limitSelect.value) || 10;
+    renderTopAgencies(metrics);
+  });
+}
+
+function attachTopAgenciesRegionHandler(metrics) {
+  const regionSelect = document.getElementById('top-agencies-region');
+  if (!regionSelect) return;
+
+  regionSelect.value = state.topAgenciesRegion;
+  regionSelect.addEventListener('change', () => {
+    state.topAgenciesRegion = regionSelect.value || 'ALL';
     renderTopAgencies(metrics);
   });
 }
@@ -1328,10 +1356,11 @@ const metrics = (await loadMetrics()) ?? fallbackMetrics;
 renderCards(metrics);
 renderImportBreakdown(metrics);
 renderOfferStatusChart(metrics);
-renderTopAgencies(metrics);
-attachTableSortHandlers(metrics);
-attachTableLimitHandler(metrics);
-populateFilters(metrics);
-attachFilterHandlers(metrics);
-renderTrendCharts(metrics);
+  renderTopAgencies(metrics);
+  attachTableSortHandlers(metrics);
+  attachTableLimitHandler(metrics);
+  attachTopAgenciesRegionHandler(metrics);
+  populateFilters(metrics);
+  attachFilterHandlers(metrics);
+  renderTrendCharts(metrics);
 setPageLoading(false);
