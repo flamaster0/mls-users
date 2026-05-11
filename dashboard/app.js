@@ -103,8 +103,8 @@ function getXAxisLabelMode(series) {
   const last = new Date(`${series[series.length - 1].date}T00:00:00`);
   if (Number.isNaN(first.getTime()) || Number.isNaN(last.getTime())) return 'monthly';
   const monthSpan = (last.getFullYear() - first.getFullYear()) * 12 + (last.getMonth() - first.getMonth());
-  if (monthSpan >= 24) return 'semiannual';
-  if (monthSpan >= 12) return 'quarterly';
+  if (monthSpan >= 18) return 'semiannual';
+  if (monthSpan >= 9) return 'quarterly';
   return 'monthly';
 }
 
@@ -124,11 +124,13 @@ function setPageLoading(isLoading) {
   }
 }
 
-function buildSemiannualGuideLines(series, xForIndex, height, margin) {
+function buildXAxisGuideLines(series, xForIndex, height, margin, mode) {
+  if (mode === 'monthly') return '';
   const startY = margin.top;
   const endY = height - margin.bottom;
   const seen = new Set();
   const guides = [];
+  const allowedMonths = mode === 'semiannual' ? new Set(['01', '07']) : new Set(['01', '04', '07', '10']);
 
   series.forEach((row, index) => {
     const prev = series[index - 1];
@@ -136,20 +138,46 @@ function buildSemiannualGuideLines(series, xForIndex, height, margin) {
     if (!isFirstOfMonth) return;
     const month = row.date.slice(5, 7);
     const yearMonth = row.date.slice(0, 7);
-    if (seen.has(yearMonth) || (month !== '01' && month !== '07')) return;
+    if (seen.has(yearMonth) || !allowedMonths.has(month)) return;
     seen.add(yearMonth);
     const x = xForIndex(index);
     const isJanuary = month === '01';
+    const lineColor = isJanuary ? 'rgba(96, 188, 178, 0.92)' : 'rgba(148, 163, 184, 0.58)';
+    const labelColor = isJanuary ? 'rgba(96, 188, 178, 0.98)' : 'rgba(148, 163, 184, 0.88)';
+    const badgeFill = isJanuary ? 'rgba(96, 188, 178, 0.16)' : 'rgba(148, 163, 184, 0.12)';
+    const badgeY = endY + 4;
     guides.push(`
-      <line
-        x1="${x}"
-        x2="${x}"
-        y1="${startY}"
-        y2="${endY}"
-        stroke="${isJanuary ? 'rgba(125, 211, 252, 0.62)' : 'rgba(148, 163, 184, 0.34)'}"
-        stroke-width="${isJanuary ? '3' : '1.6'}"
-        stroke-dasharray="${isJanuary ? 'none' : '4 6'}"
-      />
+      <g class="chart-guide" pointer-events="none">
+        <line
+          x1="${x}"
+          x2="${x}"
+          y1="${startY}"
+          y2="${endY}"
+          stroke="${lineColor}"
+          stroke-width="${isJanuary ? '2.8' : '2'}"
+          stroke-dasharray="${isJanuary ? 'none' : '5 5'}"
+          vector-effect="non-scaling-stroke"
+        />
+        <rect
+          x="${x - 12}"
+          y="${badgeY}"
+          width="24"
+          height="15"
+          rx="7"
+          fill="${badgeFill}"
+          stroke="${lineColor}"
+          stroke-width="0.7"
+          vector-effect="non-scaling-stroke"
+        />
+        <text
+          x="${x}"
+          y="${badgeY + 11}"
+          text-anchor="middle"
+          fill="${labelColor}"
+          font-size="10"
+          font-weight="700"
+        >${month}</text>
+      </g>
     `);
   });
 
@@ -867,8 +895,6 @@ function renderSingleChart(series, config) {
       </text>
     `;
   });
-  const guideLines = buildSemiannualGuideLines(series, xForIndex, height, margin);
-
   const points = series.map((row, index) => {
     const value = Number(row[config.key]) || 0;
     if (config.leadingGapBeforeYear && Number(String(row.date).slice(0, 4)) < config.leadingGapBeforeYear) return null;
@@ -895,9 +921,9 @@ function renderSingleChart(series, config) {
   chart.setAttribute('viewBox', `0 0 ${width} ${height}`);
   chart.innerHTML = `
     ${grid.join('')}
-    ${guideLines}
     <path d="${path}" fill="none" stroke="${config.color}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" />
     ${last ? `<circle cx="${last.x}" cy="${last.y}" r="4.5" fill="${config.color}" stroke="rgba(7, 17, 31, 0.9)" stroke-width="2" />` : ''}
+    ${buildXAxisGuideLines(series, xForIndex, height, margin, xAxisMode)}
     ${xLabels.join('')}
     <g class="chart-hover-layer">
       <line class="chart-hover-line" x1="${margin.left}" x2="${width - margin.right}" y1="${last.y}" y2="${last.y}" stroke="${config.color}" stroke-linecap="round" stroke-width="1.4" stroke-dasharray="6 6" opacity="0" pointer-events="none" />
@@ -1027,8 +1053,6 @@ function renderMultiSeriesChart(series, config) {
       </text>
     `;
   });
-  const guideLines = buildSemiannualGuideLines(displaySeries, xForIndex, height, margin);
-
   const linesMarkup = config.seriesDefs
     .map((seriesDef) => {
       const points = displaySeries.map((row, index) => {
@@ -1049,8 +1073,8 @@ function renderMultiSeriesChart(series, config) {
   chart.setAttribute('viewBox', `0 0 ${width} ${height}`);
   chart.innerHTML = `
     ${grid.join('')}
-    ${guideLines}
     ${linesMarkup}
+    ${buildXAxisGuideLines(displaySeries, xForIndex, height, margin, xAxisMode)}
     ${xLabels.join('')}
     <g class="chart-hover-layer"></g>
   `;
@@ -1203,6 +1227,7 @@ function renderTrendCharts(metrics) {
   breakdownChart.innerHTML = `
     ${grid.join('')}
     ${seriesMarkup}
+    ${buildXAxisGuideLines(series, xForIndex, height, margin, xAxisMode)}
     ${xLabels.join('')}
   `;
   setChartTooltip(breakdownChart, breakdownSeries, { label: 'Liczba ofert', gapBeforeYear: OFFER_BREAKDOWN_START_YEAR }, breakdownSeriesConfig, width, height, margin);
