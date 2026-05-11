@@ -155,6 +155,26 @@ function buildSemiannualGuideLines(series, xForIndex, height, margin) {
   return guides.join('');
 }
 
+function trimLeadingZeroSeries(series, seriesDefs) {
+  const firstPositiveIndex = series.findIndex((row) =>
+    seriesDefs.some((seriesDef) => (Number(row?.[seriesDef.key]) || 0) > 0),
+  );
+
+  if (firstPositiveIndex <= 0) {
+    return {
+      series,
+      trimmed: false,
+      firstPositiveDate: firstPositiveIndex >= 0 ? series[firstPositiveIndex]?.date ?? null : null,
+    };
+  }
+
+  return {
+    series: series.slice(firstPositiveIndex),
+    trimmed: true,
+    firstPositiveDate: series[firstPositiveIndex]?.date ?? null,
+  };
+}
+
 function shouldAutoScaleTrend() {
   return state.region !== 'ALL' || state.city !== 'ALL' || state.yearFrom !== 'ALL' || state.yearTo !== 'ALL';
 }
@@ -856,6 +876,8 @@ function renderMultiSeriesChart(series, config) {
   const subtitle = document.getElementById(config.subtitleId);
   if (!chart || !latestBox || !subtitle) return;
   const legend = ensureChartLegend(chart);
+  const leadingTrim = config.trimLeadingZeros ? trimLeadingZeroSeries(series, config.seriesDefs) : { series, trimmed: false, firstPositiveDate: null };
+  const displaySeries = leadingTrim.series;
 
   const hasPositiveValues = series.some((row) =>
     config.seriesDefs.some((seriesDef) => (Number(row[seriesDef.key]) || 0) > 0),
@@ -895,17 +917,34 @@ function renderMultiSeriesChart(series, config) {
     return;
   }
 
+  if (!displaySeries.length) {
+    chart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
+    latestBox.innerHTML = '';
+    subtitle.textContent = `${config.label} - ${getScopeLabel()} • brak danych`;
+    if (legend) {
+      legend.innerHTML = config.seriesDefs
+        .map((seriesDef) => `
+          <span class="chart-legend-item">
+            <span class="chart-legend-swatch" style="background:${seriesDef.color}"></span>
+            <span>${escapeHtml(seriesDef.label)}</span>
+          </span>
+        `)
+        .join('');
+    }
+    return;
+  }
+
   const width = 1120;
   const height = 280;
   const margin = { top: 18, right: 22, bottom: 48, left: 54 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
-  const values = series.flatMap((row) => config.seriesDefs.map((seriesDef) => row[seriesDef.key] ?? 0));
+  const values = displaySeries.flatMap((row) => config.seriesDefs.map((seriesDef) => row[seriesDef.key] ?? 0));
   const bounds = getAxisBounds(values, { minValue: config.minValue, maxValue: config.maxValue }, config.yTickStep ?? 50);
   const minValue = bounds.minValue;
   const maxValue = bounds.maxValue;
-  const xForIndex = (index) => margin.left + (series.length === 1 ? innerWidth / 2 : (index / (series.length - 1)) * innerWidth);
+  const xForIndex = (index) => margin.left + (displaySeries.length === 1 ? innerWidth / 2 : (index / (displaySeries.length - 1)) * innerWidth);
   const range = Math.max(1, maxValue - minValue);
   const yForValue = (value) => margin.top + innerHeight - ((value - minValue) / range) * innerHeight;
 
@@ -925,9 +964,9 @@ function renderMultiSeriesChart(series, config) {
     `);
   }
 
-  const xAxisMode = getXAxisLabelMode(series);
-  const xLabels = series.map((row, index) => {
-    const prev = series[index - 1];
+  const xAxisMode = getXAxisLabelMode(displaySeries);
+  const xLabels = displaySeries.map((row, index) => {
+    const prev = displaySeries[index - 1];
     const isFirstOfMonth = !prev || row.date.slice(0, 7) !== prev.date.slice(0, 7);
     if (!isFirstOfMonth || !shouldShowXAxisLabel(row.date, xAxisMode)) return '';
     const x = xForIndex(index);
@@ -941,11 +980,11 @@ function renderMultiSeriesChart(series, config) {
       </text>
     `;
   });
-  const guideLines = buildSemiannualGuideLines(series, xForIndex, height, margin);
+  const guideLines = buildSemiannualGuideLines(displaySeries, xForIndex, height, margin);
 
   const linesMarkup = config.seriesDefs
     .map((seriesDef) => {
-      const points = series.map((row, index) => {
+      const points = displaySeries.map((row, index) => {
         const value = Number(row[seriesDef.key]) || 0;
         if (config.zeroAsGap && value === 0) return null;
         return { x: xForIndex(index), y: yForValue(value), value };
@@ -969,9 +1008,9 @@ function renderMultiSeriesChart(series, config) {
     <g class="chart-hover-layer"></g>
   `;
 
-  setChartTooltip(chart, series, { label: config.tooltipLabel ?? config.label ?? 'Wartość' }, config.seriesDefs, width, height, margin);
-  subtitle.textContent = `${config.label} - ${getScopeLabel()} • ${series.length} snapshotów`;
-  latestBox.innerHTML = config.latestRenderer(series[series.length - 1], series);
+  setChartTooltip(chart, displaySeries, { label: config.tooltipLabel ?? config.label ?? 'Wartość' }, config.seriesDefs, width, height, margin);
+  subtitle.textContent = `${config.label} - ${getScopeLabel()} • ${displaySeries.length} snapshotów${leadingTrim.trimmed && leadingTrim.firstPositiveDate ? ` • od ${formatDatePl(leadingTrim.firstPositiveDate)}` : ''}`;
+  latestBox.innerHTML = config.latestRenderer(displaySeries[displaySeries.length - 1], displaySeries);
   if (legend) {
     legend.innerHTML = config.seriesDefs
       .map((seriesDef) => `
@@ -1210,6 +1249,7 @@ function renderTrendCharts(metrics) {
       gridStep: 100,
       hideWhenAllZero: true,
       zeroAsGap: true,
+      trimLeadingZeros: true,
       latestRenderer: (latest) => `
         <div class="trend-breakdown-latest-grid">
           <div class="trend-latest-card">
@@ -1228,7 +1268,6 @@ function renderTrendCharts(metrics) {
   searchesSubtitle.textContent = `Poszukiwania - ${getScopeLabel()} • ${series.length} snapshotów`;
   onlyMlsSubtitle.textContent = `Tylko w MLS - ${getScopeLabel()} • ${series.length} snapshotów`;
   importSourcesSubtitle.textContent = `Agencje z importem Asari / EstiCRM - ${getScopeLabel()} • ${series.length} snapshotów`;
-  importOffersSubtitle.textContent = `Oferty dodane przez Asari / EstiCRM - ${getScopeLabel()} • ${series.length} snapshotów`;
 }
 
 function attachFilterHandlers(metrics) {
