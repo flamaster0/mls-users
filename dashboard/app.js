@@ -41,6 +41,7 @@ const chartConfigs = [
   { key: 'agents', label: 'Liczba agentów', color: '#f59e0b', svgId: 'trend-agents-chart', latestId: 'trend-agents-latest', subtitleId: 'trend-agents-subtitle', minValue: 3000, maxValue: 5000, yTickStep: 500 },
   { key: 'searches', label: 'Poszukiwania', color: '#8b8dd9', svgId: 'trend-searches-chart', latestId: 'trend-searches-latest', subtitleId: 'trend-searches-subtitle', zeroAsGap: true, hideWhenAllZero: true },
   { key: 'suspended', label: 'Oferty suspended', color: '#fb7185', svgId: 'trend-suspended-chart', latestId: 'trend-suspended-latest', subtitleId: 'trend-suspended-subtitle', minValue: 600, maxValue: 1200, yTickStep: 100, zeroAsGap: true, hideWhenAllZero: true },
+  { key: 'onlyMls', label: 'Tylko w MLS', color: '#60BCB2', svgId: 'trend-only-mls-chart', latestId: 'trend-only-mls-latest', subtitleId: 'trend-only-mls-subtitle', minValue: 400, maxValue: 1000, yTickStep: 100, leadingGapBeforeYear: 2022 },
 ];
 
 const breakdownSeriesConfig = [
@@ -803,6 +804,7 @@ function renderSingleChart(series, config) {
 
   const points = series.map((row, index) => {
     const value = Number(row[config.key]) || 0;
+    if (config.leadingGapBeforeYear && Number(String(row.date).slice(0, 4)) < config.leadingGapBeforeYear) return null;
     if (config.zeroAsGap && value === 0) return null;
     return { x: xForIndex(index), y: yForValue(value), value };
   });
