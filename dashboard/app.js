@@ -945,9 +945,9 @@ function renderMultiSeriesChart(series, config) {
   }
 
   if (config.hideWhenAllZero && !hasPositiveValues) {
-    chart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak importów dla tego filtra.</text>';
+    chart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla wybranego filtra.</text>';
     latestBox.innerHTML = '';
-    subtitle.textContent = `${config.label} - ${getScopeLabel()} • brak importów`;
+    subtitle.textContent = `${config.label} - ${getScopeLabel()} • brak danych`;
     if (legend) {
       legend.innerHTML = config.seriesDefs
         .map((seriesDef) => `
@@ -962,7 +962,7 @@ function renderMultiSeriesChart(series, config) {
   }
 
   if (!displaySeries.length) {
-    chart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla tego filtra.</text>';
+    chart.innerHTML = '<text x="24" y="48" fill="#9fb0c7">Brak danych dla wybranego filtra.</text>';
     latestBox.innerHTML = '';
     subtitle.textContent = `${config.label} - ${getScopeLabel()} • brak danych`;
     if (legend) {
