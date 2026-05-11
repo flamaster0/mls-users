@@ -102,8 +102,8 @@ function getXAxisLabelMode(series) {
   const last = new Date(`${series[series.length - 1].date}T00:00:00`);
   if (Number.isNaN(first.getTime()) || Number.isNaN(last.getTime())) return 'monthly';
   const monthSpan = (last.getFullYear() - first.getFullYear()) * 12 + (last.getMonth() - first.getMonth());
-  if (monthSpan >= 60) return 'semiannual';
-  if (monthSpan >= 24) return 'quarterly';
+  if (monthSpan >= 24) return 'semiannual';
+  if (monthSpan >= 12) return 'quarterly';
   return 'monthly';
 }
 
