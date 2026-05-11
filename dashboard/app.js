@@ -361,7 +361,10 @@ function renderTopAgencies(metrics) {
   }
 
   if (regionSelect) {
-    const regions = Array.from(new Set(metrics.top_agencies.map((row) => row.province).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'pl', { sensitivity: 'base' }));
+    const regions = Array.from(new Set([
+      ...(metrics.trend_dimensions?.regions ?? []),
+      ...metrics.top_agencies.map((row) => row.province).filter(Boolean),
+    ])).sort((a, b) => a.localeCompare(b, 'pl', { sensitivity: 'base' }));
     regionSelect.innerHTML = ['<option value="ALL">Wszystkie regiony</option>']
       .concat(regions.map((region) => `<option value="${escapeHtml(region)}">${escapeHtml(region)}</option>`))
       .join('');
