@@ -45,33 +45,28 @@ body.is-loading .bg-orb {
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(32, 32, 32, 0.94);
-  backdrop-filter: blur(8px);
+  background: rgba(32, 32, 32, 0.96);
+  backdrop-filter: blur(10px);
   z-index: 1000;
+  pointer-events: all;
 }
 
 .page-loader-card {
-  display: flex;
-  align-items: center;
+  display: grid;
+  justify-items: center;
   gap: 16px;
-  padding: 20px 24px;
+  padding: 24px 28px;
   border: 1px solid var(--line);
   border-radius: 18px;
   background: rgba(32, 32, 32, 0.9);
   box-shadow: none;
+  min-width: 260px;
 }
 
 .page-loader-card p {
   font-size: 1.02rem;
   font-weight: 600;
   letter-spacing: -0.01em;
-}
-
-.page-loader-card span {
-  display: block;
-  margin-top: 4px;
-  color: var(--muted);
-  font-size: 0.88rem;
 }
 
 .page-loader-spinner {
