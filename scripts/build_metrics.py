@@ -93,7 +93,10 @@ def parse_user_date(path: Path) -> str:
 
 
 def build_biura_metrics():
-    path = ROOT / "MLS_Biura_z_dnia_2026-05-10.xls"
+    biura_paths = sorted(ROOT.glob("MLS_Biura_z_dnia_*.xls"))
+    if not biura_paths:
+        raise FileNotFoundError("No MLS_Biura_z_dnia_*.xls files found.")
+    path = biura_paths[-1]
     rows = load_sheet_rows(path)
 
     def field(name):
