@@ -101,11 +101,14 @@ function getXAxisLabelMode(series) {
   const last = new Date(`${series[series.length - 1].date}T00:00:00`);
   if (Number.isNaN(first.getTime()) || Number.isNaN(last.getTime())) return 'monthly';
   const monthSpan = (last.getFullYear() - first.getFullYear()) * 12 + (last.getMonth() - first.getMonth());
-  return monthSpan >= 18 ? 'quarterly' : 'monthly';
+  if (monthSpan >= 60) return 'semiannual';
+  if (monthSpan >= 24) return 'quarterly';
+  return 'monthly';
 }
 
 function shouldShowXAxisLabel(dateValue, mode) {
   const month = dateValue.slice(5, 7);
+  if (mode === 'semiannual') return ['01', '07'].includes(month);
   if (mode === 'quarterly') return ['01', '04', '07', '10'].includes(month);
   return true;
 }
@@ -141,9 +144,9 @@ function buildSemiannualGuideLines(series, xForIndex, height, margin) {
         x2="${x}"
         y1="${startY}"
         y2="${endY}"
-        stroke="${isJanuary ? 'rgba(125, 211, 252, 0.42)' : 'rgba(148, 163, 184, 0.24)'}"
-        stroke-width="${isJanuary ? '2.2' : '1.2'}"
-        stroke-dasharray="${isJanuary ? 'none' : '3 7'}"
+        stroke="${isJanuary ? 'rgba(125, 211, 252, 0.62)' : 'rgba(148, 163, 184, 0.34)'}"
+        stroke-width="${isJanuary ? '3' : '1.6'}"
+        stroke-dasharray="${isJanuary ? 'none' : '4 6'}"
       />
     `);
   });
