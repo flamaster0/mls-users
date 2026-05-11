@@ -187,14 +187,9 @@ function getAxisBounds(values, config, step = 50) {
 
   if (autoScale) {
     const padding = Math.max(step / 2, 10);
-    let minValue = Math.floor((dataMin - padding) / step) * step;
+    const minValue = Math.max(0, forcedMinValue != null ? forcedMinValue : 0);
     let maxValue = Math.ceil((dataMax + padding) / step) * step;
-    if (forcedMinValue != null) {
-      minValue = forcedMinValue;
-    }
-    minValue = Math.max(0, minValue);
     if (maxValue <= minValue) {
-      minValue -= step;
       maxValue += step;
     }
     return { minValue, maxValue };
