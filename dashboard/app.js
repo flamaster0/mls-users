@@ -532,6 +532,27 @@ function buildTrendSeries(metrics) {
     }));
 }
 
+function aggregateSeriesByMonth(series, keys) {
+  const grouped = new Map();
+  for (const row of series) {
+    const monthKey = String(row.date).slice(0, 7);
+    if (!/^\d{4}-\d{2}$/.test(monthKey)) continue;
+
+    const bucket = grouped.get(monthKey) ?? {
+      date: `${monthKey}-01`,
+      ...Object.fromEntries(keys.map((key) => [key, 0])),
+    };
+
+    for (const key of keys) {
+      bucket[key] += Number(row[key]) || 0;
+    }
+
+    grouped.set(monthKey, bucket);
+  }
+
+  return Array.from(grouped.values()).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+}
+
 function pathFromPoints(points, options = {}) {
   const { allowGaps = false } = options;
   const filteredPoints = allowGaps ? points.filter(Boolean) : points;
@@ -1231,7 +1252,7 @@ function renderTrendCharts(metrics) {
   );
 
   renderMultiSeriesChart(
-    series,
+    aggregateSeriesByMonth(series, ['asariOffers', 'estiOffers']),
     {
       label: 'Oferty dodane przez Asari / EstiCRM',
       svgId: 'trend-import-offers-chart',
@@ -1243,7 +1264,7 @@ function renderTrendCharts(metrics) {
       yTickStep: 100,
       gridStep: 100,
       hideWhenAllZero: true,
-      zeroAsGap: true,
+      zeroAsGap: false,
       trimLeadingZeros: true,
       latestRenderer: (latest) => `
         <div class="trend-breakdown-latest-grid">
