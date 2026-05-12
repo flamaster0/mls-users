@@ -533,61 +533,35 @@ function populateFilters(metrics) {
 
 function buildTrendSeries(metrics) {
   const rows = Array.isArray(metrics?.trend_rows) ? metrics.trend_rows : [];
+  const selectedRegion = state.region;
+  const selectedCity = state.city;
+  const targetRegion = selectedRegion === 'ALL' ? 'ALL' : selectedRegion;
+  const targetCity = selectedCity === 'ALL' ? 'ALL' : selectedCity;
   const filteredRows = rows.filter((row) => {
-    if (state.region !== 'ALL' && row.region !== state.region) return false;
-    if (state.city !== 'ALL' && row.city !== state.city) return false;
+    if (row.region !== targetRegion) return false;
+    if (row.city !== targetCity) return false;
     const year = String(row?.date ?? '').slice(0, 4);
     if (state.yearFrom !== 'ALL' && year < state.yearFrom) return false;
     if (state.yearTo !== 'ALL' && year > state.yearTo) return false;
     return true;
   });
 
-  const grouped = new Map();
-  for (const row of filteredRows) {
-    const bucket = grouped.get(row.date) ?? {
-      date: row.date,
-      officesSet: new Set(),
-      agents: 0,
-      searches: 0,
-      offers: 0,
-      onlyMls: 0,
-      active: 0,
-      suspended: 0,
-      asariAgencies: new Set(),
-      estiAgencies: new Set(),
-      asariOffers: 0,
-      estiOffers: 0,
-    };
-    if (row.company) bucket.officesSet.add(row.company);
-    bucket.agents += Number(row.agents) || 0;
-    bucket.searches += Number(row.searches) || 0;
-    bucket.offers += Number(row.offers) || 0;
-    bucket.onlyMls += Number(row.only_mls) || 0;
-    bucket.active += Number(row.active) || 0;
-    bucket.suspended += Number(row.suspended) || 0;
-    if ((Number(row.asari_imports) || 0) > 0 && row.company) bucket.asariAgencies.add(row.company);
-    if ((Number(row.esti_imports) || 0) > 0 && row.company) bucket.estiAgencies.add(row.company);
-    bucket.asariOffers += Number(row.asari_offers ?? row.asari_imports) || 0;
-    bucket.estiOffers += Number(row.esti_offers ?? row.esti_imports) || 0;
-    grouped.set(row.date, bucket);
-  }
-
-  return Array.from(grouped.values())
+  return filteredRows
     .sort((a, b) => String(a.date).localeCompare(String(b.date)))
     .map((row) => ({
       date: row.date,
-      offices: row.officesSet.size,
+      offices: row.offices,
       agents: row.agents,
       searches: row.searches,
       offers: row.offers,
-      onlyMls: row.onlyMls,
+      onlyMls: row.only_mls,
       active: row.active,
       suspended: row.suspended,
-      onlyMlsActive: row.onlyMls + row.active,
-      asariAgencies: row.asariAgencies.size,
-      estiAgencies: row.estiAgencies.size,
-      asariOffers: row.asariOffers,
-      estiOffers: row.estiOffers,
+      onlyMlsActive: row.only_mls + row.active,
+      asariAgencies: row.asari_agencies,
+      estiAgencies: row.esti_agencies,
+      asariOffers: row.asari_offers,
+      estiOffers: row.esti_offers,
     }));
 }
 

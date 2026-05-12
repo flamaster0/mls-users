@@ -161,6 +161,36 @@ def build_user_trends():
     trend_rows = []
     region_set = set()
     city_by_region = {}
+    buckets = {}
+
+    def bucket_key(date: str, region: str, city: str) -> tuple[str, str, str]:
+        return date, region, city
+
+    def get_bucket(date: str, region: str, city: str) -> dict:
+        key = bucket_key(date, region, city)
+        bucket = buckets.get(key)
+        if bucket is None:
+            bucket = {
+                "date": date,
+                "region": region,
+                "city": city,
+                "users": 0,
+                "offices_set": set(),
+                "agents": 0,
+                "searches": 0,
+                "offers": 0,
+                "only_mls": 0,
+                "active": 0,
+                "suspended": 0,
+                "blocked": 0,
+                "asari_agencies": set(),
+                "esti_agencies": set(),
+                "asari_offers": 0,
+                "esti_offers": 0,
+            }
+            buckets[key] = bucket
+        return bucket
+
     for path in sorted(ROOT.glob("MLS_Użytkownicy_z_dnia_*.xls")):
         rows = load_sheet_rows(path)
         date = parse_user_date(path)
@@ -171,28 +201,69 @@ def build_user_trends():
             if region != "UNKNOWN":
                 region_set.add(region)
                 city_by_region.setdefault(region, set()).add(city)
-            trend_rows.append(
-                {
-                    "date": date,
-                    "region": region,
-                    "city": city,
-                    "company": company,
-                    "agents": 1,
-                    "searches": to_int(row.get("order_count")) or 0,
-                    "offers": to_int(row.get("offer_count")) or 0,
-                    "only_mls": to_int(row.get("only_mls")) or 0,
-                    "active": to_int(row.get("active")) or 0,
-                    "suspended": to_int(row.get("suspended")) or 0,
-                    "blocked": to_int(row.get("blocked")) or 0,
-                    "asari_imports": to_int(row.get("offer_from_Asari")) or 0,
-                    "esti_imports": to_int(row.get("offer_from_EstiCRM")) or 0,
-                    "asari_offers": to_int(row.get("offer_from_Asari")) or 0,
-                    "esti_offers": to_int(row.get("offer_from_EstiCRM")) or 0,
-                }
-            )
+            row_values = {
+                "agents": 1,
+                "searches": to_int(row.get("order_count")) or 0,
+                "offers": to_int(row.get("offer_count")) or 0,
+                "only_mls": to_int(row.get("only_mls")) or 0,
+                "active": to_int(row.get("active")) or 0,
+                "suspended": to_int(row.get("suspended")) or 0,
+                "blocked": to_int(row.get("blocked")) or 0,
+                "asari_imports": to_int(row.get("offer_from_Asari")) or 0,
+                "esti_imports": to_int(row.get("offer_from_EstiCRM")) or 0,
+            }
+            bucket_targets = [
+                ("ALL", "ALL"),
+            ]
+            if region != "UNKNOWN":
+                bucket_targets.append((region, "ALL"))
+            if city != "UNKNOWN":
+                bucket_targets.append(("ALL", city))
+            if region != "UNKNOWN" and city != "UNKNOWN":
+                bucket_targets.append((region, city))
+
+            for bucket_region, bucket_city in bucket_targets:
+                bucket = get_bucket(date, bucket_region, bucket_city)
+                bucket["users"] += 1
+                if company:
+                    bucket["offices_set"].add(company)
+                bucket["agents"] += row_values["agents"]
+                bucket["searches"] += row_values["searches"]
+                bucket["offers"] += row_values["offers"]
+                bucket["only_mls"] += row_values["only_mls"]
+                bucket["active"] += row_values["active"]
+                bucket["suspended"] += row_values["suspended"]
+                bucket["blocked"] += row_values["blocked"]
+                if row_values["asari_imports"] > 0 and company:
+                    bucket["asari_agencies"].add(company)
+                if row_values["esti_imports"] > 0 and company:
+                    bucket["esti_agencies"].add(company)
+                bucket["asari_offers"] += row_values["asari_imports"]
+                bucket["esti_offers"] += row_values["esti_imports"]
 
     regions = sorted(region_set)
     cities = sorted({city for values in city_by_region.values() for city in values if city != "UNKNOWN"})
+    for bucket in buckets.values():
+        trend_rows.append(
+            {
+                "date": bucket["date"],
+                "region": bucket["region"],
+                "city": bucket["city"],
+                "users": bucket["users"],
+                "offices": len(bucket["offices_set"]),
+                "agents": bucket["agents"],
+                "searches": bucket["searches"],
+                "offers": bucket["offers"],
+                "only_mls": bucket["only_mls"],
+                "active": bucket["active"],
+                "suspended": bucket["suspended"],
+                "blocked": bucket["blocked"],
+                "asari_agencies": len(bucket["asari_agencies"]),
+                "esti_agencies": len(bucket["esti_agencies"]),
+                "asari_offers": bucket["asari_offers"],
+                "esti_offers": bucket["esti_offers"],
+            }
+        )
     return {
         "rows": trend_rows,
         "regions": regions,
@@ -210,15 +281,17 @@ def main() -> None:
 
     latest_date = None
     latest_stats = {"users": 0, "offers": 0, "active": 0, "only_mls": 0}
-    if trend_rows:
-        latest_date = max(row["date"] for row in trend_rows)
-        latest_bucket = [row for row in trend_rows if row["date"] == latest_date]
-        latest_stats = {
-            "users": len(latest_bucket),
-            "offers": sum(row["offers"] for row in latest_bucket),
-            "active": sum(row["active"] for row in latest_bucket),
-            "only_mls": sum(row["only_mls"] for row in latest_bucket),
-        }
+    latest_rows = [row for row in trend_rows if row["region"] == "ALL" and row["city"] == "ALL"]
+    if latest_rows:
+        latest_date = max(row["date"] for row in latest_rows)
+        latest_bucket = next((row for row in latest_rows if row["date"] == latest_date), None)
+        if latest_bucket:
+            latest_stats = {
+                "users": latest_bucket["users"],
+                "offers": latest_bucket["offers"],
+                "active": latest_bucket["active"],
+                "only_mls": latest_bucket["only_mls"],
+            }
 
     metrics = {
         "project": "MLS Users",
