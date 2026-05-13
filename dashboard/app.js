@@ -142,10 +142,6 @@ function buildXAxisGuideLines(series, xForIndex, height, margin, mode) {
     seen.add(yearMonth);
     const x = xForIndex(index);
     const isJanuary = month === '01';
-    const lineColor = isJanuary ? 'rgba(125, 211, 252, 0.88)' : 'rgba(203, 213, 225, 0.5)';
-    const labelColor = isJanuary ? 'rgba(125, 211, 252, 0.98)' : 'rgba(226, 232, 240, 0.9)';
-    const badgeFill = isJanuary ? 'rgba(125, 211, 252, 0.14)' : 'rgba(226, 232, 240, 0.08)';
-    const badgeY = endY + 4;
     guides.push(`
       <g class="chart-guide" pointer-events="none">
         <line
@@ -153,30 +149,11 @@ function buildXAxisGuideLines(series, xForIndex, height, margin, mode) {
           x2="${x}"
           y1="${startY}"
           y2="${endY}"
-          stroke="${lineColor}"
-          stroke-width="${isJanuary ? '3.2' : '2.4'}"
-          stroke-dasharray="${isJanuary ? 'none' : '4 4'}"
+          stroke="${isJanuary ? 'rgba(125, 211, 252, 0.28)' : 'rgba(203, 213, 225, 0.18)'}"
+          stroke-width="${isJanuary ? '1.8' : '1.3'}"
+          stroke-dasharray="${isJanuary ? 'none' : '4 5'}"
           vector-effect="non-scaling-stroke"
         />
-        <rect
-          x="${x - 12}"
-          y="${badgeY}"
-          width="24"
-          height="15"
-          rx="7"
-          fill="${badgeFill}"
-          stroke="${lineColor}"
-          stroke-width="0.7"
-          vector-effect="non-scaling-stroke"
-        />
-        <text
-          x="${x}"
-          y="${badgeY + 11}"
-          text-anchor="middle"
-          fill="${labelColor}"
-          font-size="10"
-          font-weight="700"
-        >${month}</text>
       </g>
     `);
   });
