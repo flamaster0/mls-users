@@ -1288,11 +1288,11 @@ function renderTrendCharts(metrics) {
         { key: 'estiAgencies', label: 'EstiCRM', color: '#5D9F4F' },
       ],
       tooltipLabel: 'Agencje',
-      forceMinValue: 0,
+      minValue: 0,
       yTickStep: 50,
       gridStep: 50,
       hideWhenAllZero: true,
-      zeroAsGap: true,
+      zeroAsGap: false,
       latestRenderer: (latest) => `
         <div class="trend-breakdown-latest-grid">
           <div class="trend-latest-card">
@@ -1317,12 +1317,12 @@ function renderTrendCharts(metrics) {
       subtitleId: 'trend-import-offers-subtitle',
       seriesDefs: importOffersSeriesConfig,
       tooltipLabel: 'Oferty',
-      forceMinValue: 0,
-      yTickStep: 100,
-      gridStep: 100,
+      minValue: 0,
+      yTickStep: 5000,
+      gridStep: 5000,
       hideWhenAllZero: true,
       zeroAsGap: false,
-      trimLeadingZeros: true,
+      trimLeadingZeros: false,
       latestRenderer: (latest) => `
         <div class="trend-breakdown-latest-grid">
           <div class="trend-latest-card">
