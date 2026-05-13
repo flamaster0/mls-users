@@ -620,6 +620,32 @@ function aggregateSeriesByMonth(series, keys) {
   return Array.from(grouped.values()).sort((a, b) => String(a.date).localeCompare(String(b.date)));
 }
 
+function removeMonthlyOfferOutliers(series, keys) {
+  if (!Array.isArray(series) || series.length < 3) return series;
+
+  const cloned = series.map((row) => ({ ...row }));
+  for (let index = 1; index < cloned.length - 1; index += 1) {
+    const row = cloned[index];
+    const prev = cloned[index - 1];
+    const next = cloned[index + 1];
+    const rowValues = keys.map((key) => Number(row[key]) || 0);
+    const prevValues = keys.map((key) => Number(prev[key]) || 0);
+    const nextValues = keys.map((key) => Number(next[key]) || 0);
+    const rowMax = Math.max(...rowValues);
+    const adjacentMax = Math.max(...prevValues, ...nextValues);
+
+    if (rowMax < 8000) continue;
+    if (adjacentMax >= rowMax / 4) continue;
+    if (rowValues.some((value) => value <= 0)) continue;
+
+    for (const key of keys) {
+      row[key] = null;
+    }
+  }
+
+  return cloned;
+}
+
 function pathFromPoints(points, options = {}) {
   const { allowGaps = false } = options;
   const filteredPoints = allowGaps ? points.filter(Boolean) : points.filter(Boolean);
@@ -730,12 +756,13 @@ function setChartTooltip(chart, series, config, seriesDefs, width, height, margi
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
   const xForIndex = (index) => margin.left + (series.length === 1 ? innerWidth / 2 : (index / (series.length - 1)) * innerWidth);
-  const maxValues = seriesDefs.map((seriesDef) => Math.max(1, ...series.map((row) => Number(row[seriesDef.key]) || 0)));
+  const maxValues = seriesDefs.map((seriesDef) => Math.max(1, ...series.map((row) => (row[seriesDef.key] == null ? 0 : Number(row[seriesDef.key]) || 0))));
 
   const pointsBySeries = seriesDefs.map((seriesDef, seriesIndex) =>
     series.map((row, index) => {
-      const value = Number(row[seriesDef.key]) || 0;
-      const isGap = Boolean(config.zeroAsGap && value === 0) || Boolean(config.gapBeforeYear && Number(String(row.date).slice(0, 4)) < config.gapBeforeYear && seriesDef.key !== 'offers');
+      const rawValue = row[seriesDef.key];
+      const value = rawValue == null ? null : (Number(rawValue) || 0);
+      const isGap = value == null || Boolean(config.zeroAsGap && value === 0) || Boolean(config.gapBeforeYear && Number(String(row.date).slice(0, 4)) < config.gapBeforeYear && seriesDef.key !== 'offers');
       const yForValue = (rawValue) => margin.top + innerHeight - ((rawValue - 0) / (maxValues[seriesIndex] - 0)) * innerHeight;
       return {
         x: xForIndex(index),
@@ -1021,7 +1048,10 @@ function renderMultiSeriesChart(series, config) {
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
-  const values = displaySeries.flatMap((row) => config.seriesDefs.map((seriesDef) => row[seriesDef.key] ?? 0));
+  const values = displaySeries.flatMap((row) => config.seriesDefs.flatMap((seriesDef) => {
+    const value = row[seriesDef.key];
+    return value == null ? [] : [Number(value) || 0];
+  }));
   const bounds = getAxisBounds(values, { minValue: config.minValue, maxValue: config.maxValue }, config.yTickStep ?? 50);
   const minValue = bounds.minValue;
   const maxValue = bounds.maxValue;
@@ -1064,12 +1094,14 @@ function renderMultiSeriesChart(series, config) {
   const linesMarkup = config.seriesDefs
     .map((seriesDef) => {
       const points = displaySeries.map((row, index) => {
-        const value = Number(row[seriesDef.key]) || 0;
+        const rawValue = row[seriesDef.key];
+        const value = rawValue == null ? null : (Number(rawValue) || 0);
+        if (value == null) return null;
         if (config.zeroAsGap && value === 0) return null;
         return { x: xForIndex(index), y: yForValue(value), value };
       });
       const last = [...points].reverse().find((point) => point);
-      const path = pathFromPoints(points, { allowGaps: Boolean(config.zeroAsGap) });
+      const path = pathFromPoints(points, { allowGaps: Boolean(config.zeroAsGap) || points.some((point) => !point) });
       if (!path) return '';
       return `
         <path d="${path}" fill="none" stroke="${seriesDef.color}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
@@ -1088,7 +1120,7 @@ function renderMultiSeriesChart(series, config) {
   `;
 
   setChartTooltip(chart, displaySeries, { label: config.tooltipLabel ?? config.label ?? 'Wartość' }, config.seriesDefs, width, height, margin);
-  subtitle.textContent = `${config.label} - ${getScopeLabel()} • ${displaySeries.length} snapshotów${leadingTrim.trimmed && leadingTrim.firstPositiveDate ? ` • od ${formatDatePl(leadingTrim.firstPositiveDate)}` : ''}`;
+  subtitle.textContent = `${config.label} - ${getScopeLabel()} • ${displaySeries.length} snapshotów${leadingTrim.trimmed && leadingTrim.firstPositiveDate ? ` • od ${formatDatePl(leadingTrim.firstPositiveDate)}` : ''}${config.subtitleSuffix ?? ''}`;
   latestBox.innerHTML = config.latestRenderer(displaySeries[displaySeries.length - 1], displaySeries);
   if (legend) {
     legend.innerHTML = config.seriesDefs
@@ -1319,7 +1351,7 @@ function renderTrendCharts(metrics) {
   );
 
   renderMultiSeriesChart(
-    aggregateSeriesByMonth(series, ['asariOffers', 'estiOffers']),
+    removeMonthlyOfferOutliers(aggregateSeriesByMonth(series, ['asariOffers', 'estiOffers']), ['asariOffers', 'estiOffers']),
     {
       label: 'Oferty dodane przez Asari / EstiCRM',
       svgId: 'trend-import-offers-chart',
@@ -1333,6 +1365,7 @@ function renderTrendCharts(metrics) {
       hideWhenAllZero: true,
       zeroAsGap: false,
       trimLeadingZeros: false,
+      subtitleSuffix: ' • bez anomalii 2023-01',
       latestRenderer: (latest) => `
         <div class="trend-breakdown-latest-grid">
           <div class="trend-latest-card">
