@@ -592,7 +592,7 @@ function aggregateSeriesByMonth(series, keys) {
 
 function pathFromPoints(points, options = {}) {
   const { allowGaps = false } = options;
-  const filteredPoints = allowGaps ? points.filter(Boolean) : points;
+  const filteredPoints = allowGaps ? points.filter(Boolean) : points.filter(Boolean);
   if (!allowGaps) {
     if (!filteredPoints.length) return '';
     if (filteredPoints.length < 2) {
