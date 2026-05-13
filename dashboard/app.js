@@ -41,11 +41,11 @@ const chartConfigs = [
   { key: 'agents', label: 'Liczba agentów', color: '#f59e0b', svgId: 'trend-agents-chart', latestId: 'trend-agents-latest', subtitleId: 'trend-agents-subtitle', minValue: 0, maxValue: 5000, yTickStep: 500 },
   { key: 'searches', label: 'Poszukiwania', color: '#8b8dd9', svgId: 'trend-searches-chart', latestId: 'trend-searches-latest', subtitleId: 'trend-searches-subtitle', minValue: 0, yTickStep: 500, zeroAsGap: false, hideWhenAllZero: true },
   { key: 'suspended', label: 'Oferty suspended', color: '#fb7185', svgId: 'trend-suspended-chart', latestId: 'trend-suspended-latest', subtitleId: 'trend-suspended-subtitle', minValue: 600, maxValue: 1200, yTickStep: 100, zeroAsGap: true, hideWhenAllZero: true },
-  { key: 'onlyMls', label: 'Tylko w MLS', color: '#60BCB2', svgId: 'trend-only-mls-chart', latestId: 'trend-only-mls-latest', subtitleId: 'trend-only-mls-subtitle', minValue: 400, maxValue: 1000, yTickStep: 100, leadingGapBeforeYear: 2022 },
+  { key: 'onlyMls', label: 'Tylko w MLS', color: '#60BCB2', svgId: 'trend-only-mls-chart', latestId: 'trend-only-mls-latest', subtitleId: 'trend-only-mls-subtitle', minValue: 0, maxValue: 1000, yTickStep: 100, leadingGapBeforeYear: 2022 },
 ];
 
 const breakdownSeriesConfig = [
-  { key: 'offers', label: 'Liczba ofert', color: '#9fb0c7' },
+  { key: 'offers', label: 'Liczba ofert', color: '#7dd3fc' },
   { key: 'onlyMlsActive', label: 'Tylko w MLS + aktywne', color: '#356B31' },
   { key: 'active', label: 'Aktywne', color: '#5D9F4F' },
 ];
