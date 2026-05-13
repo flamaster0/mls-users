@@ -1381,8 +1381,8 @@ function attachFilterHandlers(metrics) {
   });
 }
 
-const metrics = (await loadMetrics()) ?? fallbackMetrics;
 setPageLoading(false);
+const metrics = (await loadMetrics()) ?? fallbackMetrics;
 
 try {
   renderCards(metrics);
