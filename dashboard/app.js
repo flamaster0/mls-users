@@ -1265,6 +1265,9 @@ function renderTrendCharts(metrics) {
       svgId: 'trend-searches-chart',
       latestId: 'trend-searches-latest',
       subtitleId: 'trend-searches-subtitle',
+      minValue: 1000,
+      maxValue: 11000,
+      yTickStep: 1000,
     },
   );
 
