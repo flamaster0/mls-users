@@ -347,7 +347,10 @@ function renderOfferStatusChart(metrics) {
 
 function getTrendYears(metrics) {
   const rows = Array.isArray(metrics?.trend_rows) ? metrics.trend_rows : [];
-  const years = Array.from(new Set(rows.map((row) => String(row?.date ?? '').slice(0, 4)).filter((year) => /^\d{4}$/.test(year))));
+  const years = Array.from(new Set(rows.map((row) => {
+    const date = Array.isArray(row) ? row[0] : row?.date;
+    return String(date ?? '').slice(0, 4);
+  }).filter((year) => /^\d{4}$/.test(year))));
   return years.sort((a, b) => Number(a) - Number(b));
 }
 
