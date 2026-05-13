@@ -1185,7 +1185,7 @@ function renderTrendCharts(metrics) {
   const yForValue = (value) => margin.top + innerHeight - ((value - minValue) / range) * innerHeight;
 
   const grid = [];
-  const breakdownStep = shouldAutoScaleTrend() ? getAdaptiveTickStep(values, 100) : 100;
+  const breakdownStep = shouldAutoScaleTrend() ? getAdaptiveTickStep(values, 500) : 1000;
   for (let value = Math.ceil(maxValue / breakdownStep) * breakdownStep; value >= minValue; value -= breakdownStep) {
     const ratio = (value - minValue) / range;
     const y = margin.top + innerHeight - ratio * innerHeight;
