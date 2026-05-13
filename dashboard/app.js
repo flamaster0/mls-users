@@ -611,7 +611,7 @@ function aggregateSeriesByMonth(series, keys) {
     };
 
     for (const key of keys) {
-      bucket[key] += Number(row[key]) || 0;
+      bucket[key] = Number(row[key]) || 0;
     }
 
     grouped.set(monthKey, bucket);
