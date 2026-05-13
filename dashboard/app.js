@@ -241,19 +241,32 @@ function getSortedTopAgencies(metrics) {
   });
 }
 
-function renderCards(metrics) {
+function renderCards(metrics, series = []) {
   const cards = document.querySelectorAll('.card strong');
-  metrics.cards.forEach((card, index) => {
+
+  const latestRow = Array.isArray(series) && series.length ? series[series.length - 1] : null;
+  const values = latestRow
+    ? [
+        latestRow.offices,
+        latestRow.users,
+        latestRow.active,
+        latestRow.onlyMls,
+      ]
+    : [null, null, null, null];
+
+  values.forEach((value, index) => {
     if (cards[index]) {
-      cards[index].textContent = formatNumber(card.value);
+      cards[index].textContent = value == null ? '--' : formatNumber(value);
     }
   });
 
   const cardsDate = document.getElementById('cards-date');
   if (cardsDate) {
-    cardsDate.textContent = metrics?.summary?.latest_user_snapshot
-      ? formatDatePl(metrics.summary.latest_user_snapshot)
-      : '--';
+    cardsDate.textContent = latestRow?.date
+      ? formatDatePl(latestRow.date)
+      : (metrics?.summary?.latest_user_snapshot
+        ? formatDatePl(metrics.summary.latest_user_snapshot)
+        : '--');
   }
 }
 
@@ -1140,6 +1153,7 @@ function renderTrendCharts(metrics) {
   if (!title || !subtitle) return;
 
   const series = buildTrendSeries(metrics);
+  renderCards(metrics, series);
   title.textContent = 'Trend';
   subtitle.textContent = series.length
     ? `${series.length} snapshotów • lata ${state.yearFrom === 'ALL' ? 'wszystkie' : state.yearFrom}-${state.yearTo === 'ALL' ? 'wszystkie' : state.yearTo}`
@@ -1428,7 +1442,6 @@ setPageLoading(false);
 const metrics = (await loadMetrics()) ?? fallbackMetrics;
 
 try {
-  renderCards(metrics);
   renderImportBreakdown(metrics);
   renderOfferStatusChart(metrics);
   renderTopAgencies(metrics);
