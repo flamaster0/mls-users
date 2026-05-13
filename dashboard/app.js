@@ -142,9 +142,9 @@ function buildXAxisGuideLines(series, xForIndex, height, margin, mode) {
     seen.add(yearMonth);
     const x = xForIndex(index);
     const isJanuary = month === '01';
-    const lineColor = isJanuary ? 'rgba(96, 188, 178, 0.92)' : 'rgba(148, 163, 184, 0.58)';
-    const labelColor = isJanuary ? 'rgba(96, 188, 178, 0.98)' : 'rgba(148, 163, 184, 0.88)';
-    const badgeFill = isJanuary ? 'rgba(96, 188, 178, 0.16)' : 'rgba(148, 163, 184, 0.12)';
+    const lineColor = isJanuary ? 'rgba(125, 211, 252, 0.88)' : 'rgba(203, 213, 225, 0.5)';
+    const labelColor = isJanuary ? 'rgba(125, 211, 252, 0.98)' : 'rgba(226, 232, 240, 0.9)';
+    const badgeFill = isJanuary ? 'rgba(125, 211, 252, 0.14)' : 'rgba(226, 232, 240, 0.08)';
     const badgeY = endY + 4;
     guides.push(`
       <g class="chart-guide" pointer-events="none">
@@ -154,8 +154,8 @@ function buildXAxisGuideLines(series, xForIndex, height, margin, mode) {
           y1="${startY}"
           y2="${endY}"
           stroke="${lineColor}"
-          stroke-width="${isJanuary ? '2.8' : '2'}"
-          stroke-dasharray="${isJanuary ? 'none' : '5 5'}"
+          stroke-width="${isJanuary ? '3.2' : '2.4'}"
+          stroke-dasharray="${isJanuary ? 'none' : '4 4'}"
           vector-effect="non-scaling-stroke"
         />
         <rect
