@@ -6,7 +6,7 @@
     <title>MLS Users</title>
     <meta http-equiv="Cache-Control" content="no-store" />
     <meta http-equiv="Pragma" content="no-cache" />
-    <link rel="stylesheet" href="./styles.css?v=20260513v" />
+    <link rel="stylesheet" href="./styles.css?v=20260513w" />
   </head>
   <body class="is-loading" aria-busy="true">
     <div class="bg-orb orb-a"></div>
@@ -94,30 +94,39 @@
         </article>
       </section>
 
+      <section class="panel filter-panel">
+        <div class="panel-head">
+          <div>
+            <h2>Filtry trendu</h2>
+            <p>Region, miasto i zakres lat</p>
+          </div>
+        </div>
+        <div class="trend-controls trend-controls-top">
+          <label>
+            <span>Region</span>
+            <select id="region-filter"></select>
+          </label>
+          <label>
+            <span>Miasto</span>
+            <select id="city-filter"></select>
+          </label>
+          <label>
+            <span>Rok od</span>
+            <select id="year-from-filter"></select>
+          </label>
+          <label>
+            <span>Rok do</span>
+            <select id="year-to-filter"></select>
+          </label>
+        </div>
+      </section>
+
       <section class="grid">
         <section class="panel panel-wide trend-panel">
           <div class="panel-head trend-head">
             <div>
               <h2 id="trend-title">Trend</h2>
               <p id="trend-subtitle">Snapshoty tygodniowe</p>
-            </div>
-            <div class="trend-controls">
-              <label>
-                <span>Region</span>
-                <select id="region-filter"></select>
-              </label>
-              <label>
-                <span>Miasto</span>
-                <select id="city-filter"></select>
-              </label>
-              <label>
-                <span>Rok od</span>
-                <select id="year-from-filter"></select>
-              </label>
-              <label>
-                <span>Rok do</span>
-                <select id="year-to-filter"></select>
-              </label>
             </div>
           </div>
           <div class="trend-grid">
@@ -287,6 +296,6 @@
       </section>
     </main>
 
-    <script type="module" src="./app.js?v=20260513v"></script>
+    <script type="module" src="./app.js?v=20260513w"></script>
   </body>
 </html>

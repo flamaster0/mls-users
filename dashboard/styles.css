@@ -323,11 +323,23 @@ h1 {
   align-items: flex-end;
 }
 
+.filter-panel {
+  margin-bottom: 20px;
+}
+
+.filter-panel .panel-head {
+  margin-bottom: 14px;
+}
+
 .trend-controls {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.trend-controls-top {
+  justify-content: flex-start;
 }
 
 .trend-controls label {
@@ -611,6 +623,10 @@ tbody tr:hover {
   .trend-controls label {
     min-width: 0;
     width: 100%;
+  }
+
+  .trend-controls-top {
+    justify-content: stretch;
   }
 
   .trend-grid {
