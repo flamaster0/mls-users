@@ -550,23 +550,53 @@ function buildTrendSeries(metrics) {
     return decoded;
   }).map(decodeTrendRow);
 
-  return filteredRows
-    .sort((a, b) => String(a.date).localeCompare(String(b.date)))
-    .map((row) => ({
+  const grouped = new Map();
+  for (const row of filteredRows.sort((a, b) => String(a.date).localeCompare(String(b.date)))) {
+    const key = `${row.date}|${row.region}|${row.city}`;
+    const bucket = grouped.get(key) ?? {
       date: row.date,
-      offices: row.offices,
-      agents: row.agents,
-      searches: row.searches,
-      offers: row.offers,
-      onlyMls: row.only_mls,
-      active: row.active,
-      suspended: row.suspended,
-      onlyMlsActive: row.only_mls + row.active,
-      asariAgencies: row.asari_agencies,
-      estiAgencies: row.esti_agencies,
-      asariOffers: row.asari_offers,
-      estiOffers: row.esti_offers,
-    }));
+      offices: 0,
+      agents: 0,
+      searches: 0,
+      offers: 0,
+      onlyMls: 0,
+      active: 0,
+      suspended: 0,
+      asariAgencies: 0,
+      estiAgencies: 0,
+      asariOffers: 0,
+      estiOffers: 0,
+    };
+
+    bucket.offices += Number(row.offices) || 0;
+    bucket.agents += Number(row.agents) || 0;
+    bucket.searches += Number(row.searches) || 0;
+    bucket.offers += Number(row.offers) || 0;
+    bucket.onlyMls += Number(row.only_mls) || 0;
+    bucket.active += Number(row.active) || 0;
+    bucket.suspended += Number(row.suspended) || 0;
+    bucket.asariAgencies += Number(row.asari_agencies) || 0;
+    bucket.estiAgencies += Number(row.esti_agencies) || 0;
+    bucket.asariOffers += Number(row.asari_offers) || 0;
+    bucket.estiOffers += Number(row.esti_offers) || 0;
+    grouped.set(key, bucket);
+  }
+
+  return Array.from(grouped.values()).map((row) => ({
+    date: row.date,
+    offices: row.offices,
+    agents: row.agents,
+    searches: row.searches,
+    offers: row.offers,
+    onlyMls: row.onlyMls,
+    active: row.active,
+    suspended: row.suspended,
+    onlyMlsActive: row.onlyMls + row.active,
+    asariAgencies: row.asariAgencies,
+    estiAgencies: row.estiAgencies,
+    asariOffers: row.asariOffers,
+    estiOffers: row.estiOffers,
+  }));
 }
 
 function aggregateSeriesByMonth(series, keys) {
