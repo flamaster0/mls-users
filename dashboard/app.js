@@ -1382,9 +1382,12 @@ function attachFilterHandlers(metrics) {
 }
 
 const metrics = (await loadMetrics()) ?? fallbackMetrics;
-renderCards(metrics);
-renderImportBreakdown(metrics);
-renderOfferStatusChart(metrics);
+setPageLoading(false);
+
+try {
+  renderCards(metrics);
+  renderImportBreakdown(metrics);
+  renderOfferStatusChart(metrics);
   renderTopAgencies(metrics);
   attachTableSortHandlers(metrics);
   attachTableLimitHandler(metrics);
@@ -1392,4 +1395,6 @@ renderOfferStatusChart(metrics);
   populateFilters(metrics);
   attachFilterHandlers(metrics);
   renderTrendCharts(metrics);
-setPageLoading(false);
+} catch (error) {
+  console.error('Dashboard render failed', error);
+}
