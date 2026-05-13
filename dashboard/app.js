@@ -533,18 +533,45 @@ function populateFilters(metrics) {
 
 function buildTrendSeries(metrics) {
   const rows = Array.isArray(metrics?.trend_rows) ? metrics.trend_rows : [];
+  const regionNames = Array.isArray(metrics?.trend_dimensions?.regions) ? metrics.trend_dimensions.regions : [];
+  const cityNames = Array.isArray(metrics?.trend_dimensions?.cities) ? metrics.trend_dimensions.cities : [];
+
+  const decodeTrendRow = (row) => {
+    if (!Array.isArray(row)) return row;
+    const [date, regionIndex, cityIndex, users, offices, agents, searches, offers, onlyMls, active, suspended, blocked, asariAgencies, estiAgencies, asariOffers, estiOffers] = row;
+    return {
+      date,
+      region: regionIndex >= 0 ? regionNames[regionIndex] ?? 'UNKNOWN' : 'ALL',
+      city: cityIndex >= 0 ? cityNames[cityIndex] ?? 'UNKNOWN' : 'ALL',
+      users,
+      offices,
+      agents,
+      searches,
+      offers,
+      only_mls: onlyMls,
+      active,
+      suspended,
+      blocked,
+      asari_agencies: asariAgencies,
+      esti_agencies: estiAgencies,
+      asari_offers: asariOffers,
+      esti_offers: estiOffers,
+    };
+  };
+
   const selectedRegion = state.region;
   const selectedCity = state.city;
   const targetRegion = selectedRegion === 'ALL' ? 'ALL' : selectedRegion;
   const targetCity = selectedCity === 'ALL' ? 'ALL' : selectedCity;
   const filteredRows = rows.filter((row) => {
-    if (row.region !== targetRegion) return false;
-    if (row.city !== targetCity) return false;
-    const year = String(row?.date ?? '').slice(0, 4);
+    const decoded = decodeTrendRow(row);
+    if (decoded.region !== targetRegion) return false;
+    if (decoded.city !== targetCity) return false;
+    const year = String(decoded?.date ?? '').slice(0, 4);
     if (state.yearFrom !== 'ALL' && year < state.yearFrom) return false;
     if (state.yearTo !== 'ALL' && year > state.yearTo) return false;
-    return true;
-  });
+    return decoded;
+  }).map(decodeTrendRow);
 
   return filteredRows
     .sort((a, b) => String(a.date).localeCompare(String(b.date)))

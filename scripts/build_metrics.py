@@ -158,7 +158,6 @@ def build_biura_metrics():
 
 
 def build_user_trends():
-    trend_rows = []
     region_set = set()
     city_by_region = {}
     buckets = {}
@@ -243,27 +242,32 @@ def build_user_trends():
 
     regions = sorted(region_set)
     cities = sorted({city for values in city_by_region.values() for city in values if city != "UNKNOWN"})
+    region_index = {region: index for index, region in enumerate(regions)}
+    city_index = {city: index for index, city in enumerate(cities)}
+
+    trend_rows = []
     for bucket in buckets.values():
         trend_rows.append(
-            {
-                "date": bucket["date"],
-                "region": bucket["region"],
-                "city": bucket["city"],
-                "users": bucket["users"],
-                "offices": len(bucket["offices_set"]),
-                "agents": bucket["agents"],
-                "searches": bucket["searches"],
-                "offers": bucket["offers"],
-                "only_mls": bucket["only_mls"],
-                "active": bucket["active"],
-                "suspended": bucket["suspended"],
-                "blocked": bucket["blocked"],
-                "asari_agencies": len(bucket["asari_agencies"]),
-                "esti_agencies": len(bucket["esti_agencies"]),
-                "asari_offers": bucket["asari_offers"],
-                "esti_offers": bucket["esti_offers"],
-            }
+            [
+                bucket["date"],
+                region_index.get(bucket["region"], -1),
+                city_index.get(bucket["city"], -1),
+                bucket["users"],
+                len(bucket["offices_set"]),
+                bucket["agents"],
+                bucket["searches"],
+                bucket["offers"],
+                bucket["only_mls"],
+                bucket["active"],
+                bucket["suspended"],
+                bucket["blocked"],
+                len(bucket["asari_agencies"]),
+                len(bucket["esti_agencies"]),
+                bucket["asari_offers"],
+                bucket["esti_offers"],
+            ]
         )
+    trend_rows.sort(key=lambda row: (row[0], row[1], row[2]))
     return {
         "rows": trend_rows,
         "regions": regions,
@@ -278,19 +282,21 @@ def main() -> None:
     biura = build_biura_metrics()
     trends = build_user_trends()
     trend_rows = trends["rows"]
+    region_names = trends["regions"]
+    city_names = trends["cities"]
 
     latest_date = None
     latest_stats = {"users": 0, "offers": 0, "active": 0, "only_mls": 0}
-    latest_rows = [row for row in trend_rows if row["region"] == "ALL" and row["city"] == "ALL"]
+    latest_rows = [row for row in trend_rows if row[1] == -1 and row[2] == -1]
     if latest_rows:
-        latest_date = max(row["date"] for row in latest_rows)
-        latest_bucket = next((row for row in latest_rows if row["date"] == latest_date), None)
+        latest_date = max(row[0] for row in latest_rows)
+        latest_bucket = next((row for row in latest_rows if row[0] == latest_date), None)
         if latest_bucket:
             latest_stats = {
-                "users": latest_bucket["users"],
-                "offers": latest_bucket["offers"],
-                "active": latest_bucket["active"],
-                "only_mls": latest_bucket["only_mls"],
+                "users": latest_bucket[3],
+                "offers": latest_bucket[7],
+                "active": latest_bucket[9],
+                "only_mls": latest_bucket[8],
             }
 
     metrics = {
