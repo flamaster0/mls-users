@@ -568,6 +568,7 @@ function buildTrendSeries(metrics) {
     const key = `${row.date}|${row.region}|${row.city}`;
     const bucket = grouped.get(key) ?? {
       date: row.date,
+      users: 0,
       offices: 0,
       agents: 0,
       searches: 0,
@@ -581,6 +582,7 @@ function buildTrendSeries(metrics) {
       estiOffers: 0,
     };
 
+    bucket.users += Number(row.users) || 0;
     bucket.offices += Number(row.offices) || 0;
     bucket.agents += Number(row.agents) || 0;
     bucket.searches += Number(row.searches) || 0;
@@ -597,6 +599,7 @@ function buildTrendSeries(metrics) {
 
   return Array.from(grouped.values()).map((row) => ({
     date: row.date,
+    users: row.users,
     offices: row.offices,
     agents: row.agents,
     searches: row.searches,
