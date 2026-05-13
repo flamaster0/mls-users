@@ -38,7 +38,7 @@ const OFFER_BREAKDOWN_START_YEAR = 2022;
 
 const chartConfigs = [
   { key: 'offices', label: 'Liczba biur', color: '#7dd3fc', svgId: 'trend-offices-chart', latestId: 'trend-offices-latest', subtitleId: 'trend-office-subtitle', minValue: 300, maxValue: 700, yTickStep: 50 },
-  { key: 'agents', label: 'Liczba agentów', color: '#f59e0b', svgId: 'trend-agents-chart', latestId: 'trend-agents-latest', subtitleId: 'trend-agents-subtitle', minValue: 0, maxValue: 5000, yTickStep: 500 },
+  { key: 'agents', label: 'Liczba agentów', color: '#f59e0b', svgId: 'trend-agents-chart', latestId: 'trend-agents-latest', subtitleId: 'trend-agents-subtitle', minValue: 0, maxValue: 5000, yTickStep: 500, adaptiveTickStep: 250 },
   { key: 'searches', label: 'Poszukiwania', color: '#8b8dd9', svgId: 'trend-searches-chart', latestId: 'trend-searches-latest', subtitleId: 'trend-searches-subtitle', minValue: 1000, maxValue: 11000, yTickStep: 1000, zeroAsGap: false, hideWhenAllZero: true },
   { key: 'suspended', label: 'Oferty suspended', color: '#fb7185', svgId: 'trend-suspended-chart', latestId: 'trend-suspended-latest', subtitleId: 'trend-suspended-subtitle', minValue: 0, yTickStep: 250, zeroAsGap: true, hideWhenAllZero: true },
   { key: 'onlyMls', label: 'Tylko w MLS', color: '#60BCB2', svgId: 'trend-only-mls-chart', latestId: 'trend-only-mls-latest', subtitleId: 'trend-only-mls-subtitle', minValue: 0, yTickStep: 100, leadingGapBeforeYear: 2022 },
@@ -857,7 +857,7 @@ function renderSingleChart(series, config) {
 
   const grid = [];
   const tickStep = config.yTickStep != null
-    ? (shouldAutoScaleTrend() ? getAdaptiveTickStep(values, config.yTickStep) : config.yTickStep)
+    ? (shouldAutoScaleTrend() ? getAdaptiveTickStep(values, config.adaptiveTickStep ?? config.yTickStep) : config.yTickStep)
     : getAdaptiveTickStep(values, 50);
   if (tickStep) {
     const start = Math.ceil(maxValue / tickStep) * tickStep;
