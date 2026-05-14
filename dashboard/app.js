@@ -653,8 +653,9 @@ function removeMonthlyOfferOutliers(series, keys) {
     const rowMax = Math.max(...rowValues);
     const adjacentMax = Math.max(...prevValues, ...nextValues);
 
-    if (rowMax < 8000) continue;
+    if (rowMax < 10000) continue;
     if (adjacentMax >= rowMax / 4) continue;
+    if (adjacentMax > 5000) continue;
     if (rowValues.some((value) => value <= 0)) continue;
 
     for (const key of keys) {
@@ -1380,8 +1381,8 @@ function renderTrendCharts(metrics) {
       seriesDefs: importOffersSeriesConfig,
       tooltipLabel: 'Oferty',
       minValue: 0,
-      yTickStep: 2000,
-      gridStep: 2000,
+      yTickStep: 500,
+      gridStep: 500,
       hideWhenAllZero: true,
       zeroAsGap: false,
       trimLeadingZeros: false,
